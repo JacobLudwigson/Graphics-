@@ -18,7 +18,7 @@ CLEAN=rm -f gears *.o *.a
 endif
 
 #  Compile and link
-lorez:lorez.c
+lorenz:lorenz.c
 	gcc $(CFLG) -o $@ $^   $(LIBS)
 
 #  Clean

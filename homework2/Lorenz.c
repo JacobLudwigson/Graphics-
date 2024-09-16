@@ -290,7 +290,7 @@ int main(int argc,char* argv[])
    //  Request 500 x 500 pixel window
    glutInitWindowSize(1920,1080);
    //  Create the window
-   glutCreateWindow("Jacob Ludwigson");
+   glutCreateWindow("Jacob Ludwigson Lorenz Attractor");
 #ifdef USEGLEW
    //  Initialize GLEW
    if (glewInit()!=GLEW_OK) Fatal("Error initializing GLEW\n");
