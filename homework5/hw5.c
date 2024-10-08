@@ -488,12 +488,10 @@ void updateColorValues(int numIndices, float* xyzrgb,
    vec3 currNorm;
    int normIndex;
    for (int i = 0; i < 324; i+=6){
-      //how the flibity skibity do I cast the xyz component of the triangles while iteratively calculating color values :|
-      //We cant, must precompute normals!
       int val = floor(i/2);
-      normIndex = floor(i/2);
+      normIndex = floor(i/6);
       currNorm = norms[normIndex];
-      print("currNorm : [%f,%f,%f]",currNorm.x,currNorm.y,currNorm.z);      
+      // print("currNorm : [%f,%f,%f]",currNorm.x,currNorm.y,currNorm.z);      
       rgb[val] = lightCalculate(xyzrgbNoGL[i+3], M_a.x, M_d.x, M_s.x, C_a.x, C_d.x, C_s.x,currNorm,specularConst);
       rgb[val+1] = lightCalculate(xyzrgbNoGL[i+4], M_a.y, M_d.y, M_s.y, C_a.y, C_d.y, C_s.y,currNorm,specularConst);
       rgb[val+2] = lightCalculate(xyzrgbNoGL[i+5], M_a.z, M_d.z, M_s.z, C_a.z, C_d.z, C_s.z,currNorm,specularConst);
