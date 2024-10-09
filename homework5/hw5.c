@@ -209,7 +209,7 @@ float xyzrgb[] = {
     0.5, 1, 0, 1, 1, 0,
 
 
-    1, 0, 0, 1, 1, 1,
+    1, 0, 0, 1, 0, 1,
     0.5, -1, 0, 1, 1, 0,
     0.5, 0, -1, 1, 0, 1,
 
@@ -258,13 +258,13 @@ float xyzrgb[] = {
     -0.5, 0.5, -0.5, 1, 1, 0,
 
     -0.5, -0.5, -0.5, 1, 0, 1,
-    -0.5, 0.5, 0.5, 1, 1, 0,
     -1, 0, 0, 1, 0, 1,
+    -0.5, 0.5, 0.5, 1, 1, 0,
 
     -0.5, -0.5, 0.5, 1, 0, 1,
-    -1, 0, 0, 1, 0, 1,
     -0.5, 0.5, -0.5, 1, 1, 0,
-
+    -1, 0, 0, 1, 0, 1,
+    
     // close the shape 2 triangles
     -0.5, 0.5, -0.5, 1, 0, 0,
     -0.5, 0, 0, 1, 1, 0,
@@ -273,90 +273,6 @@ float xyzrgb[] = {
     -0.5, -0.5, -0.5, 1, 0, 0,
     -0.5, -0.5, 0.5, 1, 1, 0,
     -0.5, 0, 0, 1, 1, 0,
-};
-const float xyzrgbNoGL[] = {
-    //rocket cap 4 triangles
-    1, 0, 0, 1, 0, 1,
-    0.5, 0, 1, 1, 0, 1,
-    0.5, 1, 0, 1, 1, 0,
-
-    1, 0, 0, 1, 0, 1,
-    0.5, 0, 1, 1, 0, 1,
-    0.5, -1, 0, 1, 1, 0,
-
-    1, 0, 0, 1, 0, 1,
-    0.5, 0, -1, 1, 0, 1,
-    0.5, 1, 0, 1, 1, 0,
-
-    1, 0, 0, 1, 0, 1,
-    0.5, -1, 0, 1, 1, 0,
-    0.5, 0, -1, 1, 0, 1,
-
-
-    //rocket body 8 triangles
-
-    -0.5, 0.5, 0.5, 1, 1, 1,
-    0.5, 0, 1, 1, 0, 1,
-    0.5, 1, 0, 1, 1, 0,
-
-    -0.5, -0.5, 0.5, 1, 1, 1,
-    0.5, 0, 1, 1, 0, 1,
-    0.5, -1, 0, 1, 1, 0,
-
-    -0.5, 0.5, -0.5, 1, 1, 1,
-    0.5, 0, -1, 1, 0, 1,
-    0.5, 1, 0, 1, 1, 0,
-
-    -0.5, -0.5, -0.5, 1, 1, 1,
-    0.5, 0, -1, 1, 0, 1,
-    0.5, -1, 0, 1, 1, 0,
-    
-    0.5, 1, 0, 1, 1, 1,
-    -0.5, 0.5, -0.5, 1, 0, 1,
-    -0.5, 0.5, 0.5, 1, 1, 0,
-
-     0.5,  -1,    0,    1, 1, 1,
-    -0.5, -0.5, -0.5,   1, 0, 1,
-    -0.5, -0.5,  0.5,   1, 1, 0,
-
-    -0.5,  -0.5, -0.5,    1, 1, 1,
-    0.5, 0, -1, 1, 0, 1,
-    -0.5, 0.5, -0.5, 1, 1, 0,
-
-    -0.5,  -0.5, 0.5,    1, 1, 1,
-    0.5, 0, 1, 1, 0, 1,
-    -0.5, 0.5, 0.5, 1, 1, 0,
-
-
-    //bottom fin 4 triangles
-
-    -0.5,  -0.5, 0.5,    1, 1, 1,
-    -1, 0, 0, 1, 0, 1,
-    -0.5, 0.5, 0.5, 1, 1, 0,
-
-    -0.5,  -0.5, -0.5,    1, 1, 1,
-    -1, 0, 0, 1, 0, 1,
-    -0.5, 0.5, -0.5, 1, 1, 0,
-
-    -0.5,  -0.5, -0.5,    1, 1, 1,
-    -1, 0, 0, 1, 0, 1,
-    -0.5, 0.5, 0.5, 1, 1, 0,
-
-    -0.5,  -0.5, 0.5,    1, 1, 1,
-    -1, 0, 0, 1, 0, 1,
-    -0.5, 0.5, -0.5, 1, 1, 0,
-
-
-    //close the shape 2 triangles
-
-    -0.5,0.5,-0.5,1,0,0,
-    -0.5,0.5,0.5,1,1,0,
-    -0.5,0,0,1,1,0,
-
-    -0.5,-0.5,-0.5,1,0,0,
-    -0.5,-0.5,0.5,1,1,0,
-    -0.5,0,0,1,1,0,
-
 };
 void precomputeNormals(float* xyzrgb, vec3* norms){
    vec3 v1,v2,v3;
@@ -425,35 +341,6 @@ static void drawLight(){
    glPopMatrix();
 }
 
-void displayLightingGl(){
-   glEnable(GL_LIGHTING);
-   glEnable(GL_LIGHT0);
-
-   GLfloat light_position[] = { lightPosX, 0, lightPosZ, 1.0f };
-   // GLfloat light_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-   // glLightfv(GL_LIGHT0, GL_S, light_diffuse);
-   
-   // GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f}; // RGBA values
-   // glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
-   glEnable(GL_COLOR_MATERIAL);
-   glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
-   GLfloat mat_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-   GLfloat mat_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-   GLfloat mat_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-   GLfloat mat_shininess[] = { 1.0f };
-   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_ambient);
-   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
-   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
-   glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
-   if (displayMode == 1){
-
-   }
-   
-   glDisable(GL_LIGHTING);
-   drawLight();
-}
-
 float lightCalculate(float M_e, float M_a, float M_d, float M_s,
                                float C_a, float C_d, float C_s,
                                vec3 surfaceNorm,int specularConst){
@@ -492,22 +379,16 @@ void updateColorValues(int numIndices, float* xyzrgb,
       normIndex = floor(i/6);
       currNorm = norms[normIndex];
       // print("currNorm : [%f,%f,%f]",currNorm.x,currNorm.y,currNorm.z);      
-      rgb[val] = lightCalculate(xyzrgbNoGL[i+3], M_a.x, M_d.x, M_s.x, C_a.x, C_d.x, C_s.x,currNorm,specularConst);
-      rgb[val+1] = lightCalculate(xyzrgbNoGL[i+4], M_a.y, M_d.y, M_s.y, C_a.y, C_d.y, C_s.y,currNorm,specularConst);
-      rgb[val+2] = lightCalculate(xyzrgbNoGL[i+5], M_a.z, M_d.z, M_s.z, C_a.z, C_d.z, C_s.z,currNorm,specularConst);
-
-      // rgb[val] = (float)rand()/(float)RAND_MAX;
-      // rgb[val+1] = (float)rand()/(float)RAND_MAX;
-      // rgb[val+2] = (float)rand()/(float)RAND_MAX;
-      // printf("Calculated RGB : [%f,%f,%f]\n",rgb[val],rgb[val+1],rgb[val+2]);
-      // printRGBMatrix();
+      rgb[val] = lightCalculate(xyzrgb[i+3], M_a.x, M_d.x, M_s.x, C_a.x, C_d.x, C_s.x,currNorm,specularConst);
+      rgb[val+1] = lightCalculate(xyzrgb[i+4], M_a.y, M_d.y, M_s.y, C_a.y, C_d.y, C_s.y,currNorm,specularConst);
+      rgb[val+2] = lightCalculate(xyzrgb[i+5], M_a.z, M_d.z, M_s.z, C_a.z, C_d.z, C_s.z,currNorm,specularConst);
    }
 }
 
 void funShape(double x,double y,double z, double scalex,double scaley,double scalez, double th, Material mat, Light l1)
 {
     //we can ditch our color values, although its probably not fast and instead update a random rgb matrix on every shape call
-   glVertexPointer(3,GL_FLOAT,6*sizeof(float),xyzrgbNoGL);
+   glVertexPointer(3,GL_FLOAT,6*sizeof(float),xyzrgb);
    glEnableClientState(GL_VERTEX_ARRAY);
    //  Define colors for each vertex
    updateColorValues(Ni,xyzrgb,mat.ambient,mat.diffuse,mat.specular,l1.ColorAmbient,l1.ColorDiffuse,l1.ColorSpecular,mat.shininess);
@@ -523,29 +404,29 @@ void funShape(double x,double y,double z, double scalex,double scaley,double sca
    glDisableClientState(GL_VERTEX_ARRAY);
    glDisableClientState(GL_COLOR_ARRAY);
    glColor3f(1.0f, 0.0f, 0.0f); // Set color for normals (red)
-    glBegin(GL_LINES);
-    for (int i = 0; i < Ni; i++) {
-        // Vertex position
-        float vx = xyzrgb[i * 6]*scalex;
-        float vy = xyzrgb[i * 6 + 1]*scaley;
-        float vz = xyzrgb[i * 6 + 2]*scalez;
-      //   printf("Vertices: [%f,%f,%f]\n",vx,vy,vz);
-        // Normal vector
+   //  glBegin(GL_LINES);
+   //  for (int i = 0; i < Ni; i++) {
+   //      // Vertex position
+   //      float vx = xyzrgb[i * 6]*scalex;
+   //      float vy = xyzrgb[i * 6 + 1]*scaley;
+   //      float vz = xyzrgb[i * 6 + 2]*scalez;
+   //    //   printf("Vertices: [%f,%f,%f]\n",vx,vy,vz);
+   //      // Normal vector
 
-        int index = floor(i/9);
-        float nx = norms[index].x;
-        float ny = norms[index].y;
-        float nz = norms[index].z;
-      //   printf("Normal: [%f,%f,%f]\n",nx,ny,nz);
-        // Draw line from vertex to vertex + normal
-        glVertex3f(vx, vy, vz);
-        glVertex3f((vx + nx)*2, (vy + ny)*2, (vz + nz)*2); // Scale normal for visibility
-    }
-    glEnd();
+   //      int index = floor(i/9);
+   //      float nx = norms[index].x;
+   //      float ny = norms[index].y;
+   //      float nz = norms[index].z;
+   //    //   printf("Normal: [%f,%f,%f]\n",nx,ny,nz);
+   //      // Draw line from vertex to vertex + normal
+   //      glVertex3f(vx, vy, vz);
+   //      glVertex3f((vx + nx)*2, (vy + ny)*2, (vz + nz)*2); // Scale normal for visibility
+   //  }
+   //  glEnd();
 }
 void displayLightingNoGl(){
    Light currLight = {
-      .ColorAmbient = {1.0f, 1.0f, 1.0f},  // Low ambient reflection
+      .ColorAmbient = {0.0f, 0.0f, 0.0f},  // Low ambient reflection
       .ColorDiffuse = {1.0f, 1.0f, 1.0f},  // Moderate diffuse reflection
       .ColorSpecular = {1.0f, 1.0f, 1.0f}
    };
@@ -554,13 +435,39 @@ void displayLightingNoGl(){
         .ambient = {0.2f, 0.2f, 0.2f},  // Low ambient reflection
         .diffuse = {0.3f, 0.3f, 0.3f},  // Moderate diffuse reflection
         .specular = {0.8f, 0.8f, 0.8f}, // High specular reflection
-        .shininess = 1.0f              // Higher shininess for a sharper specular highlight
+        .shininess = 32.0f              // Higher shininess for a sharper specular highlight
     };
 
    funShape(0,0,0,10,10,10,0,metallicMaterial,currLight);
+   // funShape(30,20,5,10,10,10,0,metallicMaterial,currLight);
    drawLight();
 }
+void displayLightingGl(){
+   glEnable(GL_LIGHTING);
+   glEnable(GL_LIGHT0);
 
+   GLfloat light_position[] = { lightPosX, 0, lightPosZ, 1.0f };
+   // GLfloat light_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+   // glLightfv(GL_LIGHT0, GL_S, light_diffuse);
+   
+   // GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f}; // RGBA values
+   // glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+   glEnable(GL_COLOR_MATERIAL);
+   glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+   GLfloat mat_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+   GLfloat mat_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+   GLfloat mat_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+   GLfloat mat_shininess[] = { 1.0f };
+   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_ambient);
+   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
+   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
+   glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
+   shapeEasyWay(0,0,0,10,10,10,1);
+   // shapeEasyWay(20,20,20,10,10,10,1);
+   glDisable(GL_LIGHTING);
+   drawLight();
+}
 void display()
 {
    setVec3(&viewerPos,playerX, playerY, playerZ);
@@ -584,6 +491,8 @@ void display()
 
 
    //GET RID OF THIS GLUT OBJECT BEFORE SUBMISSION!!!! 
+   // displayLightingNoGl();
+   // displayLightingGl();
    displayLightingNoGl();
 
 
