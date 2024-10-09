@@ -12,3 +12,4 @@ vec3 normalizeVector(vec3* v1);
 vec3 calculateSurfaceNormOfTriangle(vec3 v1, vec3 v2, vec3 v3);
 void absOfVector(vec3* v1);
 void inPlaceVec3Negate(vec3 *v1);
+ 

@@ -14,7 +14,7 @@ vec3 addVec3(const vec3 v1, const vec3 v2) {
     temp.x = v1.x + v2.x;
     temp.y = v1.y + v2.y;
     temp.z = v1.z + v2.z;
-    return temp;
+    return temp; 
 }
 //This function will return v1 MINUS v2 as a vec3 object;
 //Tested and good to go

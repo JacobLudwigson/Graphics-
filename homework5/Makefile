@@ -17,7 +17,7 @@ endif
 CLEAN=rm -f gears *.o *.a
 endif
 
-#  Compile and link
+#  Compile and link 
 hw5: hw5.o vectorOps.o
 	gcc $(CFLG) -o $@ $^ $(LIBS)
 
