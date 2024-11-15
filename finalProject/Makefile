@@ -1,48 +1,3 @@
-# #  MinGW
-# ifeq "$(OS)" "Windows_NT"
-# CFLG=-O3 -Wall -lglfw3 -lglew32 -lopengl32 -o triangle -I/mingw64/include -L/mingw64/lib
-# LIBS= 
-# CLEAN=rm *.exe *.o *.a
-# else
-# #  OSX
-# ifeq "$(shell uname)" "Darwin"
-# CFLG=-O3 -Wall -Wno-deprecated-declarations -DRES=1
-# LIBS=-framework GLUT -framework OpenGL
-# #  Linux/Unix/Solaris
-# else
-# CFLG=-O3 -Wall
-# LIBS=-lglut -lGLU -lGL -lm
-# endif
-# #  OSX/Linux/Unix/Solaris
-# CLEAN=rm -f gears *.o *.a
-# endif
-# CSCI_DIR = dependencies
-# CODE_DIR = code
-# SDL2 = 
-# final: main.o vectorOps.o
-# 	gcc $(CFLG) -o final main.o vectorOps.o $(LIBS)
-
-# .c.o:
-# 	gcc -c $(CFLG) -o $@ $<
-	
-# # Object file generation rules
-# main.o: main.c $(CSCI_DIR)/vectorOps.h $(CSCI_DIR)/sdlDocs.h
-# 	gcc -c $(CFLG)  main.c -o main.o 
-
-# vectorOps.o: $(CSCI_DIR)/vectorOps.c 
-# 	gcc -c $(CFLG) $(CSCI_DIR)/vectorOps.c -o vectorOps.o
-# sdlDocs.o: $(CSCI_DIR)/sdlDocs.c 
-# 	gcc -c $(CFLG) $(CSCI_DIR)/sdlDocs.c -o sdlDocs.o
-
-# sdlDocs.o : sdlDocs.c 
-
-# # #  Compile and link 
-
-# #  Clean
-# clean:
-# 	$(CLEAN)
-
-
 # MinGW
 ifeq ($(OS), Windows_NT)
 CFLG=-O3 -Wall -I/mingw64/include
@@ -63,22 +18,35 @@ endif
 
 CSCI_DIR = dependencies
 CODE_DIR = code
+SHAPES_DIR = dependencies/shapes
+SHADEROPS_DIR = dependencies/shaderOps
 SDL2 =
 
 # Compile and link the final executable
-final: main.o vectorOps.o
-	gcc $(CFLG) -o final main.o vectorOps.o $(LIBS)
+final: main.o linked.a 
+	gcc $(CFLG) -o final main.o linked.a $(LIBS)
 
 # Compile .c files into .o object files
 .c.o:
 	gcc -c $(CFLG) -o $@ $<
 
 # Object file generation rules
-main.o: main.c $(CSCI_DIR)/vectorOps.h 
-	gcc -c $(CFLG) main.c -o main.o
+#Depending on how large our shapes h gets it may be worth combining these h's to depend on each other.
+main.o: main.c $(CSCI_DIR)/linker.h $(SHAPES_DIR)/cube.h
+	gcc -c $(CFLG) main.c -o main.o $(LIBS)
 
-vectorOps.o: $(CSCI_DIR)/vectorOps.c 
-	gcc -c $(CFLG) $(CSCI_DIR)/vectorOps.c -o vectorOps.o
+linked.a: cube.o shaderOps.o
+	ar -rcs linked.a cube.o shaderOps.o
+
+cube.o: $(SHAPES_DIR)/cube.c $(SHADEROPS_DIR)/shaderOps.h
+	gcc -c $(CFLG) $(SHAPES_DIR)/cube.c -o cube.o $(LIBS)
+
+shaderOps.o: $(SHADEROPS_DIR)/shaderOps.c $(CSCI_DIR)/headers.h
+	gcc -c $(CFLG) $(SHADEROPS_DIR)/shaderOps.c -o shaderOps.o $(LIBS)
+
+
+
+
 
 
 # Clean
