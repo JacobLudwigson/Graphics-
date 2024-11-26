@@ -20,11 +20,12 @@ CSCI_DIR = dependencies
 CODE_DIR = code
 SHAPES_DIR = dependencies/shapes
 SHADEROPS_DIR = dependencies/shaderOps
+MATERIAL_DIR = dependencies/materials
 SDL2 =
 
 # Compile and link the final executable
-final: main.o linked.a 
-	gcc $(CFLG) -o final main.o linked.a $(LIBS)
+final: main.o linked.a
+	g++ $(CFLG) -o final main.o linked.a $(LIBS)
 
 # Compile .c files into .o object files
 .c.o:
@@ -32,18 +33,26 @@ final: main.o linked.a
 
 # Object file generation rules
 #Depending on how large our shapes h gets it may be worth combining these h's to depend on each other.
-main.o: main.c $(CSCI_DIR)/linker.h $(SHAPES_DIR)/cube.h
-	gcc -c $(CFLG) main.c -o main.o $(LIBS)
+main.o: main.cpp $(CSCI_DIR)/linker.h 
+	g++ -c $(CFLG) main.cpp -o main.o $(LIBS)
 
-linked.a: cube.o shaderOps.o
-	ar -rcs linked.a cube.o shaderOps.o
+linked.a: cube.o shaderOps.o sphere.o cylinder.o material.o
+	ar -rcs linked.a cube.o shaderOps.o cylinder.o sphere.o material.o
+
+sphere.o: $(SHAPES_DIR)/sphere.c $(SHAPES_DIR)/cylinder.h
+	g++ -c $(CFLG) $(SHAPES_DIR)/sphere.c -o sphere.o $(LIBS)
+
+cylinder.o: $(SHAPES_DIR)/cylinder.c $(SHAPES_DIR)/cube.h
+	g++ -c $(CFLG) $(SHAPES_DIR)/cylinder.c -o cylinder.o $(LIBS)
 
 cube.o: $(SHAPES_DIR)/cube.c $(SHADEROPS_DIR)/shaderOps.h
-	gcc -c $(CFLG) $(SHAPES_DIR)/cube.c -o cube.o $(LIBS)
+	g++ -c $(CFLG) $(SHAPES_DIR)/cube.c -o cube.o $(LIBS)
 
-shaderOps.o: $(SHADEROPS_DIR)/shaderOps.c $(CSCI_DIR)/headers.h
-	gcc -c $(CFLG) $(SHADEROPS_DIR)/shaderOps.c -o shaderOps.o $(LIBS)
+shaderOps.o: $(SHADEROPS_DIR)/shaderOps.cpp $(MATERIAL_DIR)/material.h
+	g++ -c $(CFLG) $(SHADEROPS_DIR)/shaderOps.cpp -o shaderOps.o $(LIBS)
 
+material.o: $(MATERIAL_DIR)/material.cpp $(CSCI_DIR)/headers.h
+	g++ -c $(CFLG) $(MATERIAL_DIR)/material.cpp -o material.o $(LIBS)
 
 
 
