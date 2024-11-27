@@ -1,7 +1,7 @@
 # MinGW
 ifeq ($(OS), Windows_NT)
 CFLG=-O3 -Wall -I/mingw64/include
-LIBS=-lglfw3 -lglew32 -lopengl32 -L/mingw64/lib
+LIBS=-lglfw3 -lFreeImage -lglew32 -lglu32 -lopengl32  -L/mingw64/lib 
 CLEAN=rm *.exe *.o *.a
 else
 # OSX
@@ -36,8 +36,11 @@ final: main.o linked.a
 main.o: main.cpp $(CSCI_DIR)/linker.h 
 	g++ -c $(CFLG) main.cpp -o main.o $(LIBS)
 
-linked.a: cube.o shaderOps.o sphere.o cylinder.o material.o
-	ar -rcs linked.a cube.o shaderOps.o cylinder.o sphere.o material.o
+linked.a: cube.o shaderOps.o sphere.o cylinder.o material.o halfCube.o
+	ar -rcs linked.a cube.o shaderOps.o cylinder.o sphere.o material.o halfCube.o
+
+halfCube.o: $(SHAPES_DIR)/halfCube.c $(SHAPES_DIR)/sphere.h 
+	g++ -c $(CFLG) $(SHAPES_DIR)/halfCube.c -o halfCube.o $(LIBS)
 
 sphere.o: $(SHAPES_DIR)/sphere.c $(SHAPES_DIR)/cylinder.h
 	g++ -c $(CFLG) $(SHAPES_DIR)/sphere.c -o sphere.o $(LIBS)

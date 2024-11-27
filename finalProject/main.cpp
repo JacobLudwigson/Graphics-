@@ -3,98 +3,76 @@
 #define WIDTH 1920.0f
 #define HEIGHT 1080.0f
 
-#define NUMTEXTURES 3
+#define NUMTEXTURES 6
 
 int angleX = 0;
 int angleY = 0;
 float tick = 0;
 float playerX = 0.0;
-float playerY = 0.0;
+float playerY = 5.0;
 float playerZ = 0.0;
 float angle = 0;
+int mode = 0;
 unsigned int textures[NUMTEXTURES];
-/*
-    This function is written by chatGPT, used it to convert the BMP loader from CSCIx229 to
-    a version that does not rely on GLEW.
-*/
-unsigned int LoadTexBMP(const char* file) {
-    // Open the BMP file
-    FILE* f = fopen(file, "rb");
-    if (!f) {
-        fprintf(stderr, "Error: Cannot open file %s\n", file);
+float lastMouseX = WIDTH / 2.0f;
+float lastMouseY = HEIGHT / 2.0f;
+bool firstMouse = false; // Ignore initial large delta on mouse movement
+float mouseSensitivity = 0.2f;
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (firstMouse) {
+        lastMouseX = xpos;
+        lastMouseY = ypos;
+        firstMouse = false;
+    }
+
+    // Calculate offset
+    float xoffset = (xpos - lastMouseX) * mouseSensitivity;
+    float yoffset = (lastMouseY - ypos) * mouseSensitivity; // Reversed y-coordinates
+    lastMouseX = xpos;
+    lastMouseY = ypos;
+
+    // Update angles
+    angleX += xoffset;
+    angleY += yoffset;
+
+    // Constrain pitch angle to prevent flipping
+    if (angleY > 89.0f)
+        angleY = 89.0f;
+    if (angleY < -89.0f)
+        angleY = -89.0f;
+}
+GLuint loadTexture(const char* filepath) {
+    // Initialize FreeImage
+    FreeImage_Initialise();
+
+    // Load image from file
+    FIBITMAP* bitmap = FreeImage_Load(FreeImage_GetFileType(filepath, 0), filepath);
+    if (!bitmap) {
+        std::cerr << "Failed to load image: " << filepath << std::endl;
         return 0;
     }
 
-    // Verify BMP file magic number
-    unsigned short magic;
-    if (fread(&magic, 2, 1, f) != 1) {
-        fprintf(stderr, "Error: Cannot read BMP magic number from %s\n", file);
-        fclose(f);
-        return 0;
-    }
-    if (magic != 0x4D42) {
-        fprintf(stderr, "Error: File is not a valid BMP: %s\n", file);
-        fclose(f);
-        return 0;
-    }
+    // Convert image to 32-bit format (RGBA)
+    FIBITMAP* img32 = FreeImage_ConvertTo32Bits(bitmap);
+    FreeImage_Unload(bitmap);
 
-    // Read BMP header information
-    unsigned int dx, dy, offset, compression;
-    unsigned short planes, bpp;
-    fseek(f, 8, SEEK_CUR);  // Skip reserved fields
-    fread(&offset, 4, 1, f);   // Offset to pixel data
-    fseek(f, 4, SEEK_CUR);     // Skip header size
-    fread(&dx, 4, 1, f);       // Width
-    fread(&dy, 4, 1, f);       // Height
-    fread(&planes, 2, 1, f);   // Number of planes
-    fread(&bpp, 2, 1, f);      // Bits per pixel
-    fread(&compression, 4, 1, f);  // Compression type
+    unsigned char* data = FreeImage_GetBits(img32);
+    unsigned width = FreeImage_GetWidth(img32);
+    unsigned height = FreeImage_GetHeight(img32);
 
-    // Validate BMP properties
-    if (planes != 1 || bpp != 24 || compression != 0) {
-        fprintf(stderr, "Error: Unsupported BMP format in %s\n", file);
-        fclose(f);
-        return 0;
-    }
-
-    // Allocate memory for pixel data
-    unsigned int size = 3 * dx * dy;
-    unsigned char* image = (unsigned char*)malloc(size);
-    if (!image) {
-        fprintf(stderr, "Error: Unable to allocate memory for BMP image\n");
-        fclose(f);
-        return 0;
-    }
-
-    // Read pixel data from file
-    fseek(f, offset, SEEK_SET);
-    if (fread(image, size, 1, f) != 1) {
-        fprintf(stderr, "Error: Unable to read pixel data from %s\n", file);
-        free(image);
-        fclose(f);
-        return 0;
-    }
-    fclose(f);
-
-    // Convert BGR to RGB
-    for (unsigned int i = 0; i < size; i += 3) {
-        unsigned char temp = image[i];
-        image[i] = image[i + 2];
-        image[i + 2] = temp;
-    }
-
-    // Generate OpenGL texture
-    unsigned int texture;
+    GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, dx, dy, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 
-    // Set texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Upload the texture to OpenGL (RGBA format)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // Free pixel data and return texture ID
-    free(image);
+    FreeImage_Unload(img32);
+    FreeImage_DeInitialise();
+
     return texture;
 }
 // Handle key input for rotation
@@ -111,32 +89,27 @@ void updatePlayerCords(double stepSize, int tempTH, int tempPH){
     float r2_z_1 = Cos(tempTH) * Cos(tempPH);
     // Update player coordinates based on the direction vector and step size
     playerX += r2_x_1 * stepSize;
-    playerY += r2_y_1 * stepSize;
+    if (mode == 0){
+        playerY += r2_y_1 * stepSize;
+    }
+    
     playerZ += r2_z_1 * stepSize;
 }
 void processInput(GLFWwindow *window) {
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
-        angleY += 1;
-    }
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        angleY -= 1;
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        angleX -= 1;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        angleX += 1;
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, 1);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        updatePlayerCords(0.02,angleX, angleY); 
+        updatePlayerCords(1,angleX, angleY); 
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        updatePlayerCords(-0.02,angleX + 90,180);  
+        updatePlayerCords(-1,angleX-90,180);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        updatePlayerCords(-0.02,angleX,angleY);
+        updatePlayerCords(-1,angleX,angleY);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        updatePlayerCords(-0.02,angleX-90,180);
-    angleX %= 360;
-    angleY %= 360;
-    // printf("ANGLEX:%d\n", angleX);
+        updatePlayerCords(-1,angleX + 90,180);
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS){
+        mode += 1;
+        mode %= 2;
+    }
 }
 void drawLightsInScene(GLuint shader){
     float radius = 50;
@@ -174,17 +147,147 @@ void drawLightsInScene(GLuint shader){
     drawSphere(shader, lightPos1, glm::vec3(1.0f, 1.0f, 1.0f), 0, 0, textures[1]);
 }
 void drawChair(GLuint shader, glm::vec3 pos){
+    //Pole & cylinder & cube on top of pole
     setMaterialUniforms(shader, polishedMetal);
     drawCylinder(shader, pos + glm::vec3(0,0.5,0),glm::vec3(0.05, 0.4, 0.05),0,0, textures[1]);
     drawCylinder(shader, pos + glm::vec3(0,0.9,0),glm::vec3(0.2, 0.05, 0.2),0,0, textures[1]);
     drawCube(shader, pos + glm::vec3(0,0.95,0),glm::vec3(0.3, 0.03, 0.3),0,0, textures[1]);
+    drawCube(shader, pos + glm::vec3(0,1.35,0.30),glm::vec3(0.3, 0.03, 0.3),90,0, textures[1]);
+
+    drawCube(shader, pos + glm::vec3(0,1.0,0.28),glm::vec3(0.03, 0.07, 0.03),15,0, textures[1]);
+    // drawCube(shader, pos + glm::vec3(0,1.0,0.25),glm::vec3(0.03, 0.1, 0.03),0,0, textures[1]);
+    // Base
     setMaterialUniforms(shader,matteSurface);
     drawSphere(shader, pos, glm::vec3(0.5,0.25,0.5), 0,0,textures[0]);
+    //Seat
     setMaterialUniforms(shader,rubber);
-    drawCube(shader, pos + glm::vec3(0,1,0), glm::vec3(0.25,0.02,0.25), 0,0,textures[0]);
+    drawCube(shader, pos + glm::vec3(0,0.98,0), glm::vec3(0.25,0.02,0.25), 0,0,textures[0]);
+    drawCube(shader, pos + glm::vec3(0,1.35,0.25), glm::vec3(0.25,0.02,0.25), 90,0,textures[0]);
+}
+void drawConnectingPassage(GLuint shader, glm::vec3 pos){
+    glm::vec3 whereToDraw;
+    /*
+        Truthfully, we probably ought to precompute all of these positions since its a Sin & Cos,
+        but we will see if performance needs to be improved. This is fine for now
+    */
+    for (int i = 0; i < 15; i++){
+        whereToDraw = pos + glm::vec3(4.5*Cos(24*i), -4.5*Sin(24*i), 0);
+        drawCylinder(shader,whereToDraw, glm::vec3(1,6,1), 90, 0, textures[2]);
+    }
+}
+void drawBridge(GLuint shader, glm::vec3 pos, int ph, int th, unsigned int bridgeTex){
+    drawCube(shader,pos,glm::vec3(5,1,5),ph, th, textures[2]);
+    drawCube(shader,pos + glm::vec3(10,0,10),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(-10,0,10),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(0,0,10),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+
+    drawHalfCube(shader,pos + glm::vec3(10,0,0),glm::vec3(5,5,1),ph+270, th+180, textures[bridgeTex]);
+    drawHalfCube(shader,pos + glm::vec3(-10,0,0),glm::vec3(5,5,1),ph+270, th, textures[bridgeTex]);
+
+    drawHalfCube(shader,pos + glm::vec3(-2.5,0,-7.5),glm::vec3(2.5,2.5,1),ph+270, th, textures[bridgeTex]);
+    drawHalfCube(shader,pos + glm::vec3(2.5,0,-7.5),glm::vec3(2.5,2.5,1),ph+270, th+180, textures[bridgeTex]);
+
+    pos += glm::vec3(0,0,30);
+    drawCube(shader,pos,glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(10,0,10),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(-10,0,10),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(0,0,-10),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+
+    drawHalfCube(shader,pos + glm::vec3(10,0,0),glm::vec3(5,5,1),ph+270, th+180, textures[bridgeTex]);
+    drawHalfCube(shader,pos + glm::vec3(-10,0,0),glm::vec3(5,5,1),ph+270, th, textures[bridgeTex]);
+
+
+    pos += glm::vec3(0,0,30);
+    drawCube(shader,pos+ glm::vec3(0,0,20),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(10,0,0),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(-10,0,0),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(0,0,10),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+
+    drawHalfCube(shader,pos + glm::vec3(10,0,10),glm::vec3(5,5,1),ph+90, th+180, textures[bridgeTex]);
+    drawHalfCube(shader,pos + glm::vec3(-10,0,10),glm::vec3(5,5,1),ph+90, th, textures[bridgeTex]);
+
+    pos += glm::vec3(0,0,30);
+    drawCube(shader,pos+ glm::vec3(0,0,10),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(10,0,0),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(-10,0,0),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+    drawCube(shader,pos + glm::vec3(0,0,0),glm::vec3(5,1,5),ph, th, textures[bridgeTex]);
+
+    drawHalfCube(shader,pos + glm::vec3(10,0,10),glm::vec3(5,5,1),ph+90, th+180, textures[bridgeTex]);
+    drawHalfCube(shader,pos + glm::vec3(-10,0,10),glm::vec3(5,5,1),ph+90, th, textures[bridgeTex]);
+
+    drawHalfCube(shader,pos + glm::vec3(-2.5,0,17.5),glm::vec3(2.5,2.5,1),ph+90, th, textures[bridgeTex]);
+    drawHalfCube(shader,pos + glm::vec3(2.5,0,17.5),glm::vec3(2.5,2.5,1),ph+90, th+180, textures[bridgeTex]);
+}
+void drawWalls(GLuint shader, glm::vec3 pos, int ph, int th, float height, unsigned int wallTex) {
+    //Slanted Walls in front
+    drawCube(shader,pos + glm::vec3(-7.5,4,-3),glm::vec3(0.5,height,10.8),ph+ 180, th+45, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(7.5,4,-3),glm::vec3(0.5,height,10.8),ph+ 180, th-45, textures[wallTex]);
+
+    //Other Front walls
+    drawCube(shader,pos + glm::vec3(15,4,10),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(-15,4,10),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+
+    drawCube(shader,pos + glm::vec3(10,4,15),glm::vec3(0.5,height,5),ph, th+90, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(-10,4,15),glm::vec3(0.5,height,5),ph, th+90, textures[wallTex]);
+
+    //First hallway Walls
+    drawCube(shader,pos + glm::vec3(5,4,20),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(-5,4,20),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+
+    //First slanted hallway Walls
+    drawCube(shader,pos + glm::vec3(-10,4,30),glm::vec3(0.5,height,7),ph+ 180, th+45, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(10,4,30),glm::vec3(0.5,height,7),ph+ 180, th-45, textures[wallTex]);
+
+    //First Pre Cylinder Bridge Walls left
+    drawCube(shader,pos + glm::vec3(15,4,40),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(5,4,40),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+
+    //First Pre Cylinder Bridge Walls Right
+    drawCube(shader,pos + glm::vec3(-15,4,40),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(-5,4,40),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+
+    //Second Pre Cylinder Bridge Walls left
+    drawCube(shader,pos + glm::vec3(15,4,60),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(5,4,60),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+
+    //Second Pre Cylinder Bridge Walls Right
+    drawCube(shader,pos + glm::vec3(-15,4,60),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(-5,4,60),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+
+
+
+    // drawCube(shader,pos + glm::vec3(-5,4,60),glm::vec3(0.5,height,5),ph, th, textures[2]);
+
+
+    //Second slanted hallway Walls
+    drawCube(shader,pos + glm::vec3(10,4,70),glm::vec3(0.5,height,7),ph+ 180, th+45, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(-10,4,70),glm::vec3(0.5,height,7),ph+ 180, th-45, textures[wallTex]);
+
+    //Second hallway Walls
+    drawCube(shader,pos + glm::vec3(5,4,80),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(-5,4,80),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+
+    //Back Main Cooridor walls
+    drawCube(shader,pos + glm::vec3(10,4,85),glm::vec3(0.5,height,5),ph, th+90, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(-10,4,85),glm::vec3(0.5,height,5),ph, th+90, textures[wallTex]);
+
+    drawCube(shader,pos + glm::vec3(15,4,90),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(-15,4,90),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
+
+    //Back Tip Slanted Walls
+    drawCube(shader,pos + glm::vec3(7.5,4,103),glm::vec3(0.5,height,10.8),ph+ 180, th+45, textures[wallTex]);
+    drawCube(shader,pos + glm::vec3(-7.5,4,103),glm::vec3(0.5,height,10.8),ph+ 180, th-45, textures[wallTex]);
+}
+void drawTransparentObjects(GLuint shader, glm::vec3 pos, int ph, int th, float height){
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    drawCube(shader,pos + glm::vec3(0,4,35),glm::vec3(0.5,height,5),ph, th+90, textures[3]);
+    drawCube(shader,pos + glm::vec3(0,4,65),glm::vec3(0.5,height,5),ph, th+90, textures[3]);
+    glDisable(GL_BLEND);
 }
 // void rotateLight()
 void drawShip(GLuint shader){
+    glm::vec3 origin = glm::vec3(0,0,0);
     // Define the floor grid dimensions
     int gridWidth = 10;  // Number of cubes along the X-axis
     int gridDepth = 10;  // Number of cubes along the Z-axis
@@ -195,15 +298,17 @@ void drawShip(GLuint shader){
     drawLightsInScene(shader);
 
     setMaterialUniforms(shader, polishedMetal);
-    // drawCylinder(shader, cylPos, glm::vec3(5,1,5), 0, 0, textures[2]);
-    // for (int j = 0; j < 5; j++){
-    // int angleRot = 0;
-    // for (int i = 0; i < 10; i++){
-    //     drawCylinder(shader, glm::vec3(3*Cos(36*i), -3*Sin(36*i), 0), glm::vec3(1,4,1), 90, 0, textures[2]);
-    // }
-    // drawCube(shader, glm::vec3(7*Cos(18*i), 0, -7*Sin(18*i)+20), glm::vec3(1,4,1), 0,angleRot, textures[2]);
-        // setMaterialUniforms(shader, fire);
-    drawChair(shader, glm::vec3(0,0,0));
+    drawBridge(shader, origin, 0, 0,2);
+    drawBridge(shader, origin + glm::vec3(0,8,0), 0, 0, 2);
+    drawConnectingPassage(shader, glm::vec3(10,4,50));
+    drawConnectingPassage(shader, glm::vec3(-10,4,50));
+    setMaterialUniforms(shader, whitePadding);
+    drawWalls(shader, origin, 0, 0 ,5, 4);
+    setMaterialUniforms(shader, gold);
+    drawTransparentObjects(shader, origin, 0, 0, 5);
+
+
+    // drawHalfCube(shader,origin,glm::vec3(1,1,1),0, 0, textures[2]);
 
 
     // drawCube(shader, 10,10,10,10,0.1,0.1,angleY,angleX);
@@ -245,47 +350,50 @@ int main() {
         fprintf(stderr, "Failed to create shader program\n");
         return -1;
     }
-
-    // Vertex data for a triangle
-    // float vertices[] = {
-    //      0.0f,  0.5f, 0.0f,  // top vertex
-    //     -0.5f, -0.5f, 0.0f,  // bottom left vertex
-    //      0.5f, -0.5f, 0.0f   // bottom right vertex
-    // };
-
     float aspectRatio = WIDTH/HEIGHT;
     glEnable(GL_DEPTH_TEST);
     // glEnable(GL_CULL_FACE);
     // glCullFace(GL_BACK);  // or GL_FRONT depending on your setup
     // glFrontFace(GL_CCW);  // Counter-clockwise is the default winding order in OpenGL
 
-    // Render loop
-    textures[0] = LoadTexBMP("dependencies/textures/futuristicMosaic.bmp");
-    textures[1] = LoadTexBMP("dependencies/textures/funkyTileTexture.bmp");
-    textures[2] = LoadTexBMP("dependencies/textures/futuristicTex.bmp");
-    if (textures[0] == 0 || textures[1] == 0 || textures[2] == 0){
-        printf("Couldnt Load Tex");
+
+    textures[0] = loadTexture("dependencies/textures/futuristicMosaic.bmp");
+    textures[1] = loadTexture("dependencies/textures/funkyTileTexture.bmp");
+    textures[2] = loadTexture("dependencies/textures/futuristicTex.bmp");
+    textures[3] = loadTexture("dependencies/textures/windowTexture.bmp");
+    textures[4] = loadTexture("dependencies/textures/designer.png");
+    textures[5] = loadTexture("dependencies/textures/BlackTriTile.png");
+
+
+
+    if (!textures[0] || !textures[1] || !textures[2] || !textures[3]) {
+        printf("Texture error:\n");
         return 0;
     }
+
+
+    // textures[3] = LoadTexBMP("dependencies/textures/windowTexture.bmp");
+    // if (textures[0] == 0 || textures[1] == 0 || textures[2] == 0){
+    //     printf("Couldnt Load Tex");
+    //     return 0;
+    // }
+    glfwSetCursorPosCallback(window, mouse_callback);
+
+    // Capture the cursor
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    setupHalfCube();
     setupCube();
     setupCylinder(10);
     setupSphere(50);
     initLightingUniforms(shaderProgram);
     while (!glfwWindowShouldClose(window)) {
-        // angle += 0.02f; // Adjust the speed of the orbit
         glm::vec3 playerPos = glm::vec3(playerX, playerY, playerZ);
         processInput(window);
         projection(shaderProgram, 60.0f, 0.1f, 200.0f, aspectRatio);
-        // orthoProjection(shaderProgram, )
         setViewMatrix(shaderProgram, playerPos, angleX, angleY);
-        // Rendering
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         drawShip(shaderProgram);
-        // GLuint shader,float x, float y, float z, float scaleX, float scaleY, float scaleZ, float ph, float th
-        // drawCube(shaderProgram,0,0,0,1,1,1,angleY,angleX);
-
-        // Swap buffers and poll events
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

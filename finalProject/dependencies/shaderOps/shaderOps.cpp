@@ -125,8 +125,8 @@ void viewModel(GLuint shader,glm::vec3 translation, float ph, float th, glm::vec
 
     mat4 transform = GLM_MAT4_IDENTITY_INIT; // Start with identity matrix
     glm_scale(transform, &scale[0]);
-    glm_rotate_x(transform, degreesToRadians(ph), transform);
     glm_rotate_y(transform, degreesToRadians(th), transform);
+    glm_rotate_x(transform, degreesToRadians(ph), transform);
     glm_translate(transform, &translation[0]);
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transform[0][0]);
 }

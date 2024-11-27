@@ -6,8 +6,10 @@
 #include <string.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>    // For lookAt function
+#include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
+#include <FreeImage.h>
 #define Cos(x) (cos((x)*3.14159265/180))
 #define Sin(x) (sin((x)*3.14159265/180))
 #define NUMLIGHTSINSCENE 2

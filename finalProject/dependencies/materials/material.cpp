@@ -36,6 +36,12 @@
     glm::vec3(0.02f, 0.02f, 0.02f), // specularReflect: minimal specular highlights
     glm::vec3(0.1f, 0.1f, 0.1f)     // objectColor: near-black
 };
+Material whitePadding = {
+    glm::vec3(0.05f, 0.05f, 0.05f), // ambientReflect: low ambient reflection
+    glm::vec3(0.4f, 0.4f, 0.4f),    // diffuseReflect: moderate diffuse component
+    glm::vec3(0.02f, 0.02f, 0.02f), // specularReflect: minimal specular highlights
+    glm::vec3(1.0f, 1.0f, 1.0f)     // objectColor: near-black
+};
 Material gold = {
     glm::vec3(0.247f, 0.199f, 0.074f), // ambientReflect: gold-colored ambient lighting
     glm::vec3(0.751f, 0.606f, 0.226f), // diffuseReflect: rich gold diffuse reflection
