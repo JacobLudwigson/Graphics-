@@ -21,7 +21,7 @@ CODE_DIR = code
 SHAPES_DIR = dependencies/shapes
 SHADEROPS_DIR = dependencies/shaderOps
 MATERIAL_DIR = dependencies/materials
-SDL2 =
+PARTICLE_DIR = dependencies/particles
 
 # Compile and link the final executable
 final: main.o linked.a
@@ -36,8 +36,11 @@ final: main.o linked.a
 main.o: main.cpp $(CSCI_DIR)/linker.h 
 	g++ -c $(CFLG) main.cpp -o main.o $(LIBS)
 
-linked.a: cube.o shaderOps.o sphere.o cylinder.o material.o halfCube.o
-	ar -rcs linked.a cube.o shaderOps.o cylinder.o sphere.o material.o halfCube.o
+linked.a: cube.o shaderOps.o sphere.o cylinder.o material.o halfCube.o particle.o
+	ar -rcs linked.a cube.o shaderOps.o cylinder.o sphere.o material.o halfCube.o particle.o
+
+particle.o: $(PARTICLE_DIR)/particle.c $(SHAPES_DIR)/halfCube.h 
+	g++ -c $(CLFG) $(PARTICLE_DIR)/particle.c -o particle.o $(LIBS)
 
 halfCube.o: $(SHAPES_DIR)/halfCube.c $(SHAPES_DIR)/sphere.h 
 	g++ -c $(CFLG) $(SHAPES_DIR)/halfCube.c -o halfCube.o $(LIBS)

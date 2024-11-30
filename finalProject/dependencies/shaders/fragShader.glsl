@@ -1,5 +1,5 @@
 #version 330 core
-const int NUMLIGHTS  = 2;
+const int NUMLIGHTS  = 3;
 struct Light {
     vec3 ambientComponent;
     float pad;
