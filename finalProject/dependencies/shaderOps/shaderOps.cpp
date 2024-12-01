@@ -1,6 +1,8 @@
 #include "shaderOps.h"
 // Read shader source from file
 std::vector<Light> lightsInScene(NUMLIGHTSINSCENE);
+std::vector<dirLight> dirLightsInScene(NUMDIRLIGHTSINSCENE);
+
 char* readShaderSource(const char* shaderFile) {
     FILE* file = fopen(shaderFile, "rb");
     if (!file) {
@@ -104,32 +106,6 @@ void model(GLuint shader,glm::vec3 translation, float ph, float th, glm::vec3 sc
     glm_scale(transform, &scale[0]);
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transform[0][0]);
 }
-void lightModel(GLuint shader,glm::vec3 translation, float ph, float th, glm::vec3 scale) {
-    /*
-        Rotate by where user is looking and pass that rotation matrix to our shader
-    */
-    GLint transformLoc = glGetUniformLocation(shader, "lightModel");
-
-    mat4 transform = GLM_MAT4_IDENTITY_INIT; // Start with identity matrix
-    glm_scale(transform, &scale[0]);
-    glm_rotate_x(transform, degreesToRadians(ph), transform);
-    glm_rotate_y(transform, degreesToRadians(th), transform);
-    glm_translate(transform, &translation[0]);
-    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transform[0][0]);
-}
-void viewModel(GLuint shader,glm::vec3 translation, float ph, float th, glm::vec3 scale) {
-    /*
-        Rotate by where user is looking and pass that rotation matrix to our shader
-    */
-    GLint transformLoc = glGetUniformLocation(shader, "viewModel");
-
-    mat4 transform = GLM_MAT4_IDENTITY_INIT; // Start with identity matrix
-    glm_scale(transform, &scale[0]);
-    glm_rotate_y(transform, degreesToRadians(th), transform);
-    glm_rotate_x(transform, degreesToRadians(ph), transform);
-    glm_translate(transform, &translation[0]);
-    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transform[0][0]);
-}
 /*
     void projection(GLuint shader,float fov, float near, float far, float asp):
         Defines a uniform in the vertex shader to transform the scene based on the perspective projection
@@ -157,30 +133,6 @@ void orthoProjection(GLuint shader, float left, float right, float bottom, float
     glm_ortho(left, right, bottom, top, near, far, projection); // Use an orthographic projection
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, &projection[0][0]);
 }
-// void setViewMatrix(GLuint shader, vec3 playerPosition, int angleX, int angleY){
-//     GLint projectionLoc = glGetUniformLocation(shader, "view"); 
-//     mat4 view = GLM_MAT4_IDENTITY_INIT;
-//     vec3 center = {0.0f, 0.0f, 0.0f};
-//     vec3 target = {0.0f, 0.0f, -1.0f};
-//     vec3 up = {0.0f, 1.0f, 0.0f};
-//     glm_lookat(center, target, up, view);
-//     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, &view[0][0]);
-// }
-// void setViewMatrix(GLuint shader, vec3 playerPosition, int angleX, int angleY) {
-//     GLint viewLoc = glGetUniformLocation(shader, "view");
-    
-//     glm::vec3 eye = {0,0,-1};
-//     glm::vec3 center = {0,0,0};
-
-//     // Up vector remains constant
-//     glm::vec3 up = {0.0f, 1.0f, 0.0f};
-
-//     // Create the view matrix using glm_lookAt
-//     glm::mat4 viewMatrix = glm::lookAt(eye, center, up);
-    
-//     // Send the view matrix to the shader
-//     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));  // Use value_ptr to pass the data
-// }
 void setViewMatrix(GLuint shader, glm::vec3 playerPosition, int angleX, int angleY) {
     GLint viewLoc = glGetUniformLocation(shader, "view");
 
@@ -203,19 +155,27 @@ void initLightingUniforms(GLuint shader){
     glGenBuffers(1, &ubo);
     glBindBuffer(GL_UNIFORM_BUFFER, ubo);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(Light) * NUMLIGHTSINSCENE, lightsInScene.data(), GL_STATIC_DRAW);
-    // Bind the UBO to the binding point (e.g., 0)
     GLuint blockIndex = glGetUniformBlockIndex(shader, "LightBlock");
     glUniformBlockBinding(shader, blockIndex, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
+}
+GLuint uboD;
+void initDirLightingUniforms(GLuint shader){
+    glGenBuffers(1, &uboD);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboD);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(dirLight) * NUMDIRLIGHTSINSCENE, dirLightsInScene.data(), GL_STATIC_DRAW);
+    GLuint blockIndex = glGetUniformBlockIndex(shader, "DirLightBlock");
+    glUniformBlockBinding(shader, blockIndex, 1);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, uboD);
 }
 void setFragLightingUniforms(GLuint shader, glm::vec3 playerPos){
     GLint viewPosLoc = glGetUniformLocation(shader, "viewPos"); 
     glUniform3fv(viewPosLoc, 1, &playerPos[0]);
     //To be totally honest I am not quite sure how this works, but it works! Uniform buffer objects!
-
-    // Upload data
     glBindBuffer(GL_UNIFORM_BUFFER, ubo);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Light) * NUMLIGHTSINSCENE, lightsInScene.data());
+    glBindBuffer(GL_UNIFORM_BUFFER, uboD);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(dirLight) * NUMDIRLIGHTSINSCENE, dirLightsInScene.data());
 }
 void setMaterialUniforms(GLuint shaderProgram, Material& material) {
     GLint ambientLoc = glGetUniformLocation(shaderProgram, "mat.ambientReflect");

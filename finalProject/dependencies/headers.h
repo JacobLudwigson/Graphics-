@@ -14,7 +14,8 @@
 #include <random>
 #define Cos(x) (cos((x)*3.14159265/180))
 #define Sin(x) (sin((x)*3.14159265/180))
-#define NUMLIGHTSINSCENE 2
+#define NUMLIGHTSINSCENE 1
+#define NUMDIRLIGHTSINSCENE 2
 struct Material {
     glm::vec3 ambientReflect;
     glm::vec3 diffuseReflect;
@@ -34,4 +35,19 @@ struct Light {
     glm::vec3 lightPos = glm::vec3(0,0,0);
     float pad3;
 };
+struct dirLight {
+    glm::vec3 position= glm::vec3(0,0,0);
+    float pad4;
+    glm::vec3 direction= glm::vec3(0,0,0);
+    float pad5;
+    glm::vec3 ambientComponent= glm::vec3(0,0,0);
+    float pad;
+    glm::vec3 diffuseComponent= glm::vec3(0,0,0);
+    float pad1;
+    glm::vec3 specularComponent = glm::vec3(0,0,0);
+    float innerCutoff;
+    glm::vec3 lightColor= glm::vec3(0,0,0);
+    float outerCutoff;
+};
 extern std::vector<Light> lightsInScene;
+extern std::vector<dirLight> dirLightsInScene;

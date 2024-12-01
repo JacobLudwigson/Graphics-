@@ -1,6 +1,7 @@
 #include "../headers.h"
 
 extern Material polishedMetal;
+extern Material darkMetal;
 extern Material matteSurface;
 extern Material glossyPlastic;
 extern Material brushedMetal;
@@ -9,3 +10,4 @@ extern Material rubber;
 extern Material gold;
 extern Material whitePadding;
 extern Material fire;
+extern Material LightMaterial;

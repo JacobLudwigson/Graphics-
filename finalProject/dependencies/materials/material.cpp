@@ -6,6 +6,18 @@
     glm::vec3(0.77f, 0.77f, 0.77f), // specularReflect: strong reflective highlights
     glm::vec3(0.8f, 0.8f, 0.8f)     // objectColor: near-white metallic color
 };
+ Material darkMetal = {
+    glm::vec3(0.25f, 0.25f, 0.25f),  // ambientReflect: subdued but noticeable ambient lighting
+    glm::vec3(0.4f, 0.4f, 0.4f),    // diffuseReflect: reflects light well but not as much as specular
+    glm::vec3(0.77f, 0.77f, 0.77f), // specularReflect: strong reflective highlights
+    glm::vec3(0.2f, 0.2f, 0.2f)     // objectColor: near-white metallic color
+};
+// Material redMatter = {
+//     glm::vec3(0.25f, 0.25f, 0.25f),  // ambientReflect: subdued but noticeable ambient lighting
+//     glm::vec3(0.4f, 0.4f, 0.4f),    // diffuseReflect: reflects light well but not as much as specular
+//     glm::vec3(0.77f, 0.77f, 0.77f), // specularReflect: strong reflective highlights
+//     glm::vec3(0.8f, 0.8f, 0.8f)     // objectColor: near-white metallic color
+// };
  Material matteSurface = {
     glm::vec3(0.1f, 0.1f, 0.1f),    // ambientReflect: minimal ambient contribution
     glm::vec3(0.6f, 0.6f, 0.6f),    // diffuseReflect: strong diffuse component
@@ -53,4 +65,10 @@ Material fire = {
     glm::vec3(0.751f, 0.006f, 0.026f), // diffuseReflect: rich gold diffuse reflection
     glm::vec3(0.628f, 0.055f, 0.066f), // specularReflect: strong specular highlights
     glm::vec3(1.0f, 0.05f, 0.07f)      // objectColor: bright gold
+};
+Material LightMaterial ={
+    glm::vec3(1.0f, 1.0f, 1.0f),
+    glm::vec3(1.0f, 1.0f, 1.0f),
+    glm::vec3(1.0f, 1.0f, 1.0f),
+    glm::vec3(1.0f, 1.0f, 1.0f)
 };

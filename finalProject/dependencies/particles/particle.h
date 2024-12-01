@@ -14,12 +14,13 @@ extern float boundingRadius;
 extern float particleRadius;
 extern float distanceThresholdToCombine;
 extern float breakApartThreshold;
+extern float combinationThreshold;
 extern float randomVelocityThreshold;
 extern float startingSize;
 
 void setParamsParticles(glm::vec3 topBoundingVec_, glm::vec3 lowBoundingVec_,float boundingRadius_,
                         float particleRadius_, float distanceThresholdToCombine_, float breakApartThreshold_,
-                        float randomVelocityThreshold_,float startingSize_);
+                        float randomVelocityThreshold_,float startingSize_, float combinationThreshold_);
 void initParticles();
 void reverseVelocityVector(particle *p);
 void drawParticles(GLuint shader, unsigned int redMatterTex, glm::vec3 pos);
