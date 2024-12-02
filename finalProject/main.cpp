@@ -2,7 +2,8 @@
 
 #define WIDTH 1920.0f
 #define HEIGHT 1080.0f
-
+#define SCENEXWIDTH 36
+#define SCENEZWIDTH 120
 #define NUMTEXTURES 10
 
 int angleX = 0;
@@ -12,12 +13,13 @@ float playerX = 0.0;
 float playerY = 5.0;
 float playerZ = 0;
 float angle = 0;
-int mode = 0;
+int mode = 1;
 unsigned int textures[NUMTEXTURES];
 float lastMouseX = WIDTH / 2.0f;
 float lastMouseY = HEIGHT / 2.0f;
 bool firstMouse = false; // Ignore initial large delta on mouse movement
 float mouseSensitivity = 0.2f;
+bool walkabilityBitmap[SCENEZWIDTH][SCENEXWIDTH];
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     if (firstMouse) {
         lastMouseX = xpos;
@@ -75,7 +77,99 @@ GLuint loadTexture(const char* filepath) {
 
     return texture;
 }
-// Handle key input for rotation
+
+void generateWalkabilityBitmap(glm::vec3 pos) {
+    //We will define a "walkability" vector that can be indexed by X value ~ 40 indices
+    //Theres probably a more optimal solution here, but this opts to sacrifice the time to prepoluate an array instead of doing a dynamic check on each movement.
+    //This solution is O(1) per player movement since its direct array access (movement across z and x is probably not cache friendly but....)
+    for (int z = 0; z < SCENEZWIDTH; z++) {
+        for (int x = 0; x < SCENEXWIDTH; x++){
+            walkabilityBitmap[z][x] = false;
+        }
+    }
+    
+    //I dont know if this is the best way of doing this, but it works!
+    for (int z = 9; z < SCENEZWIDTH; z++) {
+        for (int x = 0; x < SCENEXWIDTH; x++){
+            if (z >= 10 && z < 16){
+                if (x > 26 - z && x < 14 + z){
+                    walkabilityBitmap[z][x] = true;
+                } 
+            }
+            if (z >= 16 && z < 25){
+                if (x > 6 && x < 35){
+                    walkabilityBitmap[z][x] = true;
+                } 
+            }
+            if (z >= 25 && z < 37){
+                if (x > 16 && x < 25){
+                    walkabilityBitmap[z][x] = true;
+                } 
+            }
+            //This part is janky, fix if noticeable
+            if (z >= 35 && z < 46){
+                if (x > 52 - z && x < -12 + z){
+                    walkabilityBitmap[z][x] = true;
+                } 
+                if (z > 43 && (x < 27 && x > 14)){
+                    walkabilityBitmap[z][x] = false;
+                }
+            }
+            if (z >= 46 && z < 54){
+                if ((x < 15 && x > 6) || (x < 35 && x > 26)){
+                    walkabilityBitmap[z][x] = true;
+                } 
+            }
+            if (z >= 54 && z < 68){
+                if ((x < 13 && x > 8) || (x < 33 && x > 28)){
+                    walkabilityBitmap[z][x] = true;
+                } 
+            }
+            if (z >= 68 && z < 76){
+                if ((x < 15 && x > 6) || (x < 35 && x > 26)){
+                    walkabilityBitmap[z][x] = true;
+                } 
+            }
+            if (z >= 76 && z < 85){
+                if (x < ((37+72) - z) && x > ((4 - 72) + z)){
+                    walkabilityBitmap[z][x] = true;
+                } 
+                if (z < 78 && (x < 27 && x > 14)){
+                    walkabilityBitmap[z][x] = false;
+                }
+            }
+            if (z >= 85 && z < 97){
+                if (x > 16 && x < 25){
+                    walkabilityBitmap[z][x] = true;
+                } 
+            }
+            if (z >= 97 && z < 105){
+                if ((x > 6 && x < 35)){
+                    walkabilityBitmap[z][x] = true;
+                } 
+                if (z > 100 && (x < (21 - 100 + z) && (x > (20 + 100 - z)))){
+                    walkabilityBitmap[z][x] = false;
+                }
+            }
+            if (z >= 105 && z < 118){
+                if (x < ((34+105) - z) && x > ((6 - 105) + z)){
+                    walkabilityBitmap[z][x] = true;
+                } 
+                if (z < 107 && (x < (24 + 105 - z) && (x > (17 - 105 + z)))){
+                    walkabilityBitmap[z][x] = false;
+                }
+            }
+        }
+    }
+}
+void printMyStupidPlayerCollisions(){
+    for (int z = 0; z < SCENEZWIDTH; z++) {
+        for (int x = 0; x < SCENEXWIDTH; x++){
+            printf("%d ",(int)walkabilityBitmap[z][x]);
+        }
+        printf("\n");
+    }
+}
 void updatePlayerCords(double stepSize, int tempTH, int tempPH){
     //if we take a Z unit vector and rotate it around the x axis counterclockwise we can calculate how our elevation angle will affect the direction of our movement: | 1   0         0   | |0| = |    0   |
     //                                                                                                                                                                | 0 cos(ph)  sin(ph)| |0|   |Sin(ph)|
@@ -88,24 +182,30 @@ void updatePlayerCords(double stepSize, int tempTH, int tempPH){
     float r2_y_1 = Sin(tempPH);
     float r2_z_1 = Cos(tempTH) * Cos(tempPH);
     // Update player coordinates based on the direction vector and step size
-    playerX += r2_x_1 * stepSize;
-    if (mode == 0){
-        playerY += r2_y_1 * stepSize;
+    printf("Im trying to fucking walk at: [%d,%d,%d], Heres the value there: %d\n", (int)ceil(playerX + 20 + r2_x_1 * stepSize), 0, (int)ceil(playerZ+ 10 +r2_z_1 * stepSize), walkabilityBitmap[(int)ceil(playerZ+ 10 +r2_z_1)] [(int)ceil(playerX + 20 + r2_x_1)]);
+    if (mode == 1){
+        if (walkabilityBitmap[(int)ceil(playerZ+ 10 +r2_z_1 * stepSize)] [(int)ceil(playerX + 20 + r2_x_1 * stepSize)]){
+            playerX += r2_x_1 * stepSize;
+            playerZ += r2_z_1 * stepSize;
+        }
     }
-    
-    playerZ += r2_z_1 * stepSize;
+    else {
+        playerX += r2_x_1 * stepSize;
+        playerY += r2_y_1 * stepSize;
+        playerZ += r2_z_1 * stepSize;
+    }
 }
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, 1);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        updatePlayerCords(0.5,angleX, angleY); 
+        updatePlayerCords(0.3,angleX, angleY); 
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        updatePlayerCords(-0.5,angleX-90,180);
+        updatePlayerCords(-0.3,angleX-90,180);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        updatePlayerCords(-0.5,angleX,angleY);
+        updatePlayerCords(-0.3,angleX,angleY);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        updatePlayerCords(-0.5,angleX + 90,180);
+        updatePlayerCords(-0.3,angleX + 90,180);
     if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS){
         mode += 1;
         mode %= 2;
@@ -474,18 +574,15 @@ void drawShip(GLuint shader, GLuint redMatterShader, glm::vec3 shipPos){
     tick += 0.1;
 }
 int main() {
-    // Initialize GLFW
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
         return -1;
     }
 
-    // Set GLFW version to 3.3 for OpenGL 3.3 Core
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // Create a windowed mode window and OpenGL context
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Triangle Window", NULL, NULL);
     if (!window) {
         fprintf(stderr, "Failed to create GLFW window\n");
@@ -494,7 +591,6 @@ int main() {
     }
     glfwMakeContextCurrent(window);
 
-    // Initialize GLEW
     if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Failed to initialize GLEW\n");
         return -1;
@@ -503,7 +599,6 @@ int main() {
 
     
 
-    // Compile and link shaders into a program
     GLuint shaderProgram = createShaderProgram("dependencies/shaders/vertexShader.glsl", "dependencies/shaders/fragShader.glsl");
     GLuint shaderProgram1 = createShaderProgram("dependencies/shaders/vertexShader.glsl", "dependencies/shaders/fragShader.glsl");
 
@@ -546,7 +641,6 @@ int main() {
     // }
     glfwSetCursorPosCallback(window, mouse_callback);
 
-    // Capture the cursor
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     setupHalfCube();
     setupCube();
@@ -558,7 +652,8 @@ int main() {
     //                     float randomVelocityThreshold_,float startingSize_)
     setParamsParticles(glm::vec3(0,3,0), glm::vec3(0,-3,0), 1.80, 0.2, 0.0, 0.88, 2.0f, 1.80f, 0.995);
     initParticles();
-
+    generateWalkabilityBitmap(glm::vec3(50,0,50));
+    printMyStupidPlayerCollisions();
     initLightingUniforms(shaderProgram);
     initDirLightingUniforms(shaderProgram);
     while (!glfwWindowShouldClose(window)) {
@@ -573,7 +668,6 @@ int main() {
         glfwPollEvents();
     }
 
-    // Clean up resources
     glDeleteProgram(shaderProgram);
 
     glfwDestroyWindow(window);
