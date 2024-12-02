@@ -51,7 +51,7 @@ float* sphere;
 //     }
 // }
 /*
-    This function is written by chatGPT.
+    This function is not my own work. Written by GPT using my non working code above as a starting point.
 */
 void generateSphere(int segments) {
     const float PI = 3.14159265359f;
@@ -154,6 +154,9 @@ void setupSphere(int segments) {
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    free(sphere);
+    sphere = NULL;
 }
 /*
     drawCube(GLuint shader,float x, float y, float z, float scaleX, float scaleY, float scaleZ, float ph, float th)

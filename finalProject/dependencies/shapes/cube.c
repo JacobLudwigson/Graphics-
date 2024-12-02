@@ -84,7 +84,6 @@ void drawCube(GLuint shader,glm::vec3 position, glm::vec3 scalar, float ph, floa
     glBindTexture(GL_TEXTURE_2D, texture);
     glUniform1i(textureLoc, 0);
 
-    //This will update our "model" uniform in the given shader, so Im not sure how this will work with many objects, stay tuned! (it will either draw cube as expected or modify the matrix for all vertex objects!)
     model(shader, position, ph,th, scalar);
     
     glBindVertexArray(VAO);

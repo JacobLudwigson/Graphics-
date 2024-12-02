@@ -79,7 +79,7 @@ void main() {
         lighting += (ambient + diffusel + specular) * mat.objectColor;
     }
 
-    //This lighting formula is made following this tutorial (with some modifications): https://opentk.net/learn/chapter2/5-light-casters.html 
+    //This spotlight lighting formula is made following this tutorial (with some modifications): https://opentk.net/learn/chapter2/5-light-casters.html 
     //NOTE: maybe tweak the attenuation terms to adjust some brightness problems
     for (int i = 0; i < NUMDIRLIGHTS; i++) {
         vec3 spotlightPos = dirLights[i].position;

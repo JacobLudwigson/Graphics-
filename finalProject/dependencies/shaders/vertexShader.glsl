@@ -13,6 +13,7 @@ out vec2 texCoordOut;
 
 void main() {
     FragPos = vec3(model * vec4(aPos,1.0));
+    //Note if things get slow, we might be able to skip the transpose(inverse(model)) - depending on the matrix
     Normal = normalize(mat3(transpose(inverse(model))) *aNormal);
     
     gl_Position = projection * view * model * vec4(aPos, 1.0);

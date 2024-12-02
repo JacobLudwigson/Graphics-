@@ -1,41 +1,41 @@
 #include "halfCube.h"
 float halfCube[] = {
     // Front triangular face (z = 1)
-    -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f, // Bottom-left
-     1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f, 0.0f, // Bottom-right
-     1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f, // Top
+    -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f, 0.0f,
+     1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
 
     // Back triangular face (z = -1)
-    -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f, // Bottom-left
-     1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f, // Top
-     1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f, // Bottom-right
+    -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+     1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+     1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
 
     // Bottom rectangular face (y = -1)
-    -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f, // Front-left
-     1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f, // Back-right
-     1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f, // Front-right
+    -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+     1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+     1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f, 
 
-    -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f, // Front-left
-    -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f, // Back-left
-     1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f, // Back-right
+    -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f, 
+    -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
+     1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f, 
 
     // Right rectangular face (x = 1)
-     1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f, // Front-bottom
-     1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, // Back-bottom
-     1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, // Front-top
+     1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f, 
+     1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, 
+     1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 
 
-     1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, // Front-top
-     1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, // Back-bottom
-     1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, // Back-top
+     1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 
+     1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+     1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 
 
-    // Top rectangular face (split into two triangles)
-    -1.0f, -1.0f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f, // Front-left
-     1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f, // Front-right
-     1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, // Back-right
+    // Top rectangular face 
+    -1.0f, -1.0f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f, 
+     1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f, 
+     1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 
 
-     1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, // Back-right
-    -1.0f, -1.0f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, // Back-left
-    -1.0f, -1.0f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f, // Front-left
+     1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 
+    -1.0f, -1.0f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+    -1.0f, -1.0f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f, 
 };
 
 GLuint VBOHC, VAOHC;

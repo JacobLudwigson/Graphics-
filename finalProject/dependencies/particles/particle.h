@@ -22,7 +22,8 @@ void setParamsParticles(glm::vec3 topBoundingVec_, glm::vec3 lowBoundingVec_,flo
                         float particleRadius_, float distanceThresholdToCombine_, float breakApartThreshold_,
                         float randomVelocityThreshold_,float startingSize_, float combinationThreshold_);
 void initParticles();
-void reverseVelocityVector(particle *p);
+void reverseVelocityYVector(particle *p);
+void reverseXandZVectors(particle *p);
 void drawParticles(GLuint shader, unsigned int redMatterTex, glm::vec3 pos);
 glm::vec3 noiseVelocity();
 void reverseXandZVectors(particle *p);

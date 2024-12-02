@@ -4,7 +4,7 @@
 #define HEIGHT 1080.0f
 #define SCENEXWIDTH 36
 #define SCENEZWIDTH 120
-#define NUMTEXTURES 10
+#define NUMTEXTURES 15
 
 int angleX = 0;
 int angleY = 0;
@@ -17,9 +17,10 @@ int mode = 1;
 unsigned int textures[NUMTEXTURES];
 float lastMouseX = WIDTH / 2.0f;
 float lastMouseY = HEIGHT / 2.0f;
-bool firstMouse = false; // Ignore initial large delta on mouse movement
+bool firstMouse = false; 
 float mouseSensitivity = 0.2f;
 bool walkabilityBitmap[SCENEZWIDTH][SCENEXWIDTH];
+
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     if (firstMouse) {
         lastMouseX = xpos;
@@ -43,18 +44,20 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     if (angleY < -89.0f)
         angleY = -89.0f;
 }
+/*
+    This function was written following this stack overflow post: 
+    https://stackoverflow.com/questions/17125843/how-do-i-load-textures-to-opengl-using-freeimage-library
+*/
 GLuint loadTexture(const char* filepath) {
-    // Initialize FreeImage
     FreeImage_Initialise();
 
-    // Load image from file
     FIBITMAP* bitmap = FreeImage_Load(FreeImage_GetFileType(filepath, 0), filepath);
     if (!bitmap) {
         std::cerr << "Failed to load image: " << filepath << std::endl;
         return 0;
     }
 
-    // Convert image to 32-bit format (RGBA)
+    //If not 32 bit, convert it
     FIBITMAP* img32 = FreeImage_ConvertTo32Bits(bitmap);
     FreeImage_Unload(bitmap);
 
@@ -66,7 +69,6 @@ GLuint loadTexture(const char* filepath) {
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    // Upload the texture to OpenGL (RGBA format)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -181,8 +183,7 @@ void updatePlayerCords(double stepSize, int tempTH, int tempPH){
     float r2_x_1 = -Sin(tempTH) * Cos(tempPH);
     float r2_y_1 = Sin(tempPH);
     float r2_z_1 = Cos(tempTH) * Cos(tempPH);
-    // Update player coordinates based on the direction vector and step size
-    printf("Im trying to fucking walk at: [%d,%d,%d], Heres the value there: %d\n", (int)ceil(playerX + 20 + r2_x_1 * stepSize), 0, (int)ceil(playerZ+ 10 +r2_z_1 * stepSize), walkabilityBitmap[(int)ceil(playerZ+ 10 +r2_z_1)] [(int)ceil(playerX + 20 + r2_x_1)]);
+
     if (mode == 1){
         if (walkabilityBitmap[(int)ceil(playerZ+ 10 +r2_z_1 * stepSize)] [(int)ceil(playerX + 20 + r2_x_1 * stepSize)]){
             playerX += r2_x_1 * stepSize;
@@ -219,8 +220,7 @@ void drawLightsInScene(GLuint shader){
     setFragLightingUniforms(shader,playerPos);
     float specularConst = 100.0f;
     setMaterialUniforms(shader, LightMaterial);
-    glm::vec3 lightPos = glm::vec3(radius * Cos(tick), 10, radius * Sin(tick));
-    glm::vec3 lightPos1 = glm::vec3(radius * Sin(tick), 10, radius * Cos(tick));
+    glm::vec3 lightPos = glm::vec3(radius * Cos(tick), 10,50 +  radius * Sin(tick));
     glm::vec3 lightPos2 = glm::vec3(0,7, 93);
 
     Light l1 = {
@@ -231,22 +231,6 @@ void drawLightsInScene(GLuint shader){
         .lightColor = glm::vec3(1.0,1.0,1.0),
         .lightPos = lightPos
     };
-    // Light l2 = {
-    //     .ambientComponent = glm::vec3(1.0,1.0,1.0),
-    //     .diffuseComponent = glm::vec3(1.0,1.0,1.0),
-    //     .specularComponent = glm::vec3(1.0,1.0,1.0),
-    //     .specularConstant = specularConst,
-    //     .lightColor = glm::vec3(1,1,1),
-    //     .lightPos = lightPos1
-    // };
-    // Light l3 = {
-    //     .ambientComponent = glm::vec3(1.0,1.0,1.0),
-    //     .diffuseComponent = glm::vec3(1.0,1.0,1.0),
-    //     .specularComponent = glm::vec3(1.0,1.0,1.0),
-    //     .specularConstant = specularConst,
-    //     .lightColor = glm::vec3(1,0.5,0.5),
-    //     .lightPos = lightPos2
-    // };
     dirLight l4 = {
         .position = lightPos2,
         .direction = glm::vec3(0.0,-1.0,0.0),
@@ -268,8 +252,6 @@ void drawLightsInScene(GLuint shader){
         .outerCutoff = glm::cos(glm::radians(180.0f))
     };
     lightsInScene[0] = l1;
-    // lightsInScene[1] = l2;
-    // lightsInScene[2] = l3;
     dirLightsInScene[0] = l4;
     dirLightsInScene[1] = tvScreen;
 
@@ -371,7 +353,6 @@ void drawWalls(GLuint shader, glm::vec3 pos, int ph, int th, float height, unsig
 
     drawCube(shader,pos + glm::vec3(15,0.6,10),glm::vec3(0.5,1.5,5),ph, th, textures[2]);
     drawCube(shader,pos + glm::vec3(15,7.4,10),glm::vec3(0.5,1.5,5),ph, th, textures[2]);
-    // setMaterialUniforms(shader, rubber);
 
     drawCube(shader,pos + glm::vec3(-15,4,15),glm::vec3(0.6,height,0.4),ph+ 180, th, textures[2]);
     drawCube(shader,pos + glm::vec3(-15,4,5),glm::vec3(0.6,height,0.4),ph+ 180, th, textures[2]);
@@ -379,19 +360,8 @@ void drawWalls(GLuint shader, glm::vec3 pos, int ph, int th, float height, unsig
     drawCube(shader,pos + glm::vec3(-15,0.6,10),glm::vec3(0.5,1.5,5),ph, th, textures[2]);
     drawCube(shader,pos + glm::vec3(-15,7.4,10),glm::vec3(0.5,1.5,5),ph, th, textures[2]);
 
-
-
-
-
-
-
-
     drawCube(shader,pos + glm::vec3(10,4,15),glm::vec3(0.5,height,5),ph, th+90, textures[wallTex]);
     drawCube(shader,pos + glm::vec3(-10,4,15),glm::vec3(0.5,height,5),ph, th+90, textures[wallTex]);
-
-
-
-
 
     //First hallway Walls
     drawCube(shader,pos + glm::vec3(5,4,20),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
@@ -420,18 +390,15 @@ void drawWalls(GLuint shader, glm::vec3 pos, int ph, int th, float height, unsig
     //Middle Window Sills
     drawCube(shader,pos + glm::vec3(0,0.6,34),glm::vec3(0.5,1.5,5),ph, th+90, textures[2]);
     drawCube(shader,pos + glm::vec3(0,7.4,34),glm::vec3(0.5,1.5,5),ph, th+90, textures[2]);
-    // setMaterialUniforms(shader, rubber);
+
     drawCube(shader,pos + glm::vec3(5.1,4,34.5),glm::vec3(0.5,0.99,5),ph + 90, th, textures[2]);
     drawCube(shader,pos + glm::vec3(-5.1,4,34.5),glm::vec3(0.5,0.99,5),ph + 90, th, textures[2]);
 
     drawCube(shader,pos + glm::vec3(0,0.6,66),glm::vec3(0.5,1.5,5),ph, th+90, textures[2]);
     drawCube(shader,pos + glm::vec3(0,7.4,66),glm::vec3(0.5,1.5,5),ph, th+90, textures[2]);
-    // setMaterialUniforms(shader, rubber);
+
     drawCube(shader,pos + glm::vec3(5.1,4,65.5),glm::vec3(0.5,0.99,5),ph + 90, th, textures[2]);
     drawCube(shader,pos + glm::vec3(-5.1,4,65.5),glm::vec3(0.5,0.99,5),ph + 90, th, textures[2]);
-
-    // drawCube(shader,pos + glm::vec3(-5,4,60),glm::vec3(0.5,height,5),ph, th, textures[2]);
-
 
     //Second slanted hallway Walls
     drawCube(shader,pos + glm::vec3(10,4,70),glm::vec3(0.5,height,7),ph+ 180, th+45, textures[wallTex]);
@@ -445,24 +412,17 @@ void drawWalls(GLuint shader, glm::vec3 pos, int ph, int th, float height, unsig
     drawCube(shader,pos + glm::vec3(10,4,85),glm::vec3(0.5,height,5),ph, th+90, textures[wallTex]);
     drawCube(shader,pos + glm::vec3(-10,4,85),glm::vec3(0.5,height,5),ph, th+90, textures[wallTex]);
 
-
-
-
     drawCube(shader,pos + glm::vec3(15,4,95),glm::vec3(0.6,height,0.4),ph+ 180, th, textures[2]);
     drawCube(shader,pos + glm::vec3(15,4,85),glm::vec3(0.6,height,0.4),ph+ 180, th, textures[2]);
 
-
     drawCube(shader,pos + glm::vec3(15,0.6,90),glm::vec3(0.5,1.5,5),ph, th, textures[2]);
     drawCube(shader,pos + glm::vec3(15,7.4,90),glm::vec3(0.5,1.5,5),ph, th, textures[2]);
-    // setMaterialUniforms(shader, rubber);
 
     drawCube(shader,pos + glm::vec3(-15,4,95),glm::vec3(0.6,height,0.4),ph+ 180, th, textures[2]);
     drawCube(shader,pos + glm::vec3(-15,4,85),glm::vec3(0.6,height,0.4),ph+ 180, th, textures[2]);
 
     drawCube(shader,pos + glm::vec3(-15,0.6,90),glm::vec3(0.5,1.5,5),ph, th, textures[2]);
     drawCube(shader,pos + glm::vec3(-15,7.4,90),glm::vec3(0.5,1.5,5),ph, th, textures[2]);
-
-
 
     //Back Tip Slanted Walls
     drawCube(shader,pos + glm::vec3(7.5,4,103),glm::vec3(0.5,height,10.8),ph+ 180, th+45, textures[wallTex]);
@@ -485,11 +445,7 @@ void drawTransparentObjects(GLuint shader, glm::vec3 pos, int ph, int th, float 
     drawCylinder(shader, pos + glm::vec3(0,4,93), glm::vec3(2, height/0.99, 2), ph, th, textures[glassTex]);
     glDisable(GL_BLEND);
 }
-// void drawInteriorElements(GLuint shader, glm::vec3 pos, int ph, int th, unsigned int bridgeTex){
-//     drawCube(shader,pos + glm::vec3(-7.5,4,-3),glm::vec3(0.5,height,10.8),ph+ 180, th+45, textures[wallTex]);
-// }
 void drawRedMatterHold(GLuint shader, glm::vec3 pos, int ph, int th, float height, unsigned int glassTex, unsigned int shipMatTex){
-    // drawCylinder(shader, pos + glm::vec3(0,height/2,93), glm::vec3(2, height, 2), ph, th, textures[glassTex]);
     setMaterialUniforms(shader, polishedMetal);
     drawHalfCube(shader, pos + glm::vec3(2.6,1.5,93), glm::vec3(0.5,0.8,0.2),ph, th+180, textures[shipMatTex]);
     drawHalfCube(shader, pos + glm::vec3(-2.6,1.5,93), glm::vec3(0.5,0.8,0.2),ph, th, textures[shipMatTex]);
@@ -517,14 +473,12 @@ void drawShipInterior(GLuint shader, glm::vec3 pos, int ph, int th){
 
     drawCube(shader,pos + glm::vec3(0,5,-5.8),glm::vec3(0.1,1.8,3.5),ph+ 180, th + 90, textures[8]);
     setMaterialUniforms(shader, rubber);
-    // drawCube(shader,pos + glm::vec3(7.5,5,-1.8),glm::vec3(0.1,1.8,3.5),ph+ 180, th - 45, textures[8]);
     drawCube(shader,pos + glm::vec3(6.0,5,-3.4),glm::vec3(0.1,1.8,2.5),ph+ 180, th - 45, textures[8]);
     drawCube(shader,pos + glm::vec3(10,5,0.6),glm::vec3(0.1,1.8,2.5),ph+ 180, th - 45, textures[8]);
 
 
     drawCube(shader,pos + glm::vec3(-6.0,5,-3.4),glm::vec3(0.1,1.8,2.5),ph+ 180, th + 45, textures[8]);
     drawCube(shader,pos + glm::vec3(-10,5,0.6),glm::vec3(0.1,1.8,2.5),ph+ 180, th + 45, textures[8]);
-    // drawCube(shader,pos + glm::vec3(-7.5,5,-1.8),glm::vec3(0.1,1.8,2.5),ph+ 180, th + 45, textures[8]);
 
 
     setMaterialUniforms(shader, brushedMetal);
@@ -538,18 +492,17 @@ void drawShipInterior(GLuint shader, glm::vec3 pos, int ph, int th){
 
 
     drawChair(shader,pos + glm::vec3(-6,1,2), 2, 0, 0);
-    drawChair(shader,pos + glm::vec3(6,1,2), 1, 0 , -45);
-
-    // drawChair(shader,pos + glm::vec3(0,1,0), 2);
-    // drawChair(shader,pos + glm::vec3(0,1,0), 2);
 
 }
-// void rotateLight()
-void drawShip(GLuint shader, GLuint redMatterShader, glm::vec3 shipPos){
+void drawShip(GLuint shader, glm::vec3 shipPos){
     glm::vec3 origin = shipPos;
     drawLightsInScene(shader);
 
+
+    setMaterialUniforms(shader, glossyPlastic);
+    drawSphere(shader, glm::vec3(0,0,50), glm::vec3(100,100,100), 0,0, textures[9]);
     setMaterialUniforms(shader, polishedMetal);
+
     drawBridge(shader, origin, 0, 0,2);
     drawBridge(shader, origin + glm::vec3(0,8,0), 0, 0, 2);
     drawConnectingPassage(shader, glm::vec3(10,4,50));
@@ -561,7 +514,7 @@ void drawShip(GLuint shader, GLuint redMatterShader, glm::vec3 shipPos){
     drawParticles(shader, textures[6], origin + glm::vec3(0,4,93));
     
     drawShipInterior(shader, origin, 0, 0);
-    drawTransparentObjects(shader, origin, 0, 0, 5, 3, 3);
+    drawTransparentObjects(shader, origin, 0, 0, 5, 3, 10);
 
 
    
@@ -600,7 +553,6 @@ int main() {
     
 
     GLuint shaderProgram = createShaderProgram("dependencies/shaders/vertexShader.glsl", "dependencies/shaders/fragShader.glsl");
-    GLuint shaderProgram1 = createShaderProgram("dependencies/shaders/vertexShader.glsl", "dependencies/shaders/fragShader.glsl");
 
     if (shaderProgram == 0) {
         fprintf(stderr, "Failed to create shader program\n");
@@ -609,51 +561,40 @@ int main() {
     float aspectRatio = WIDTH/HEIGHT;
     glEnable(GL_DEPTH_TEST);
     // glEnable(GL_CULL_FACE);
-    // glCullFace(GL_BACK);  // or GL_FRONT depending on your setup
-    // glFrontFace(GL_CCW);  // Counter-clockwise is the default winding order in OpenGL
 
 
     textures[0] = loadTexture("dependencies/textures/futuristicMosaic.bmp");
     textures[1] = loadTexture("dependencies/textures/funkyTileTexture.bmp");
     textures[2] = loadTexture("dependencies/textures/futuristicTex.bmp");
-    textures[3] = loadTexture("dependencies/textures/windowTexture.bmp");
+    textures[3] = loadTexture("dependencies/textures/lowOpWindowTex.bmp");
     textures[4] = loadTexture("dependencies/textures/WhitePaddedWall.png");
     textures[5] = loadTexture("dependencies/textures/BlackTriTile.png");
     textures[6] = loadTexture("dependencies/textures/redThingBlob.png");
     textures[7] = loadTexture("dependencies/textures/R.jpg");
     textures[8] = loadTexture("dependencies/textures/tvStatic.png");
+    textures[9] = loadTexture("dependencies/textures/4kStars.jpg");
+    textures[10] = loadTexture("dependencies/textures/windowTexture.bmp");
 
-
-
-
-
-
-    if (!textures[0] || !textures[1] || !textures[2] || !textures[3]) {
+    if (!textures[0] || !textures[1] || !textures[2] || !textures[3] ||
+        !textures[4] || !textures[5] || !textures[6] || !textures[7] ||
+        !textures[8] || !textures[9] || !textures[10]) {
         printf("Texture error:\n");
         return 0;
     }
 
-
-    // textures[3] = LoadTexBMP("dependencies/textures/windowTexture.bmp");
-    // if (textures[0] == 0 || textures[1] == 0 || textures[2] == 0){
-    //     printf("Couldnt Load Tex");
-    //     return 0;
-    // }
     glfwSetCursorPosCallback(window, mouse_callback);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     setupHalfCube();
     setupCube();
     setupCylinder(20);
-    setupSphere(20);
+    setupSphere(40);
     glm::vec3 shipPos = glm::vec3(0,0,0);
-    // void setParamsParticles(glm::vec3 topBoundingVec_, glm::vec3 lowBoundingVec_,float boundingRadius_,
-    //                     float particleRadius_, float distanceThresholdToCombine_, float breakApartThreshold_,
-    //                     float randomVelocityThreshold_,float startingSize_)
+
     setParamsParticles(glm::vec3(0,3,0), glm::vec3(0,-3,0), 1.80, 0.2, 0.0, 0.88, 2.0f, 1.80f, 0.995);
     initParticles();
     generateWalkabilityBitmap(glm::vec3(50,0,50));
-    printMyStupidPlayerCollisions();
+
     initLightingUniforms(shaderProgram);
     initDirLightingUniforms(shaderProgram);
     while (!glfwWindowShouldClose(window)) {
@@ -663,7 +604,7 @@ int main() {
         setViewMatrix(shaderProgram, playerPos, angleX, angleY);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        drawShip(shaderProgram,shaderProgram1, shipPos);
+        drawShip(shaderProgram, shipPos);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

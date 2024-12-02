@@ -5,6 +5,11 @@ size_t numVertices = 0;         // Total number of vertices
 
 GLuint VBOC, VAOC;
 
+/*
+    This code is a combination of a few different tutorials + GPT + my own modifications
+    Tutorial 1:https://www.songho.ca/opengl/gl_cylinder.html
+
+*/
 void generateCylinder(int segments) {
     const float PI = 3.14159265359f;
     float angleStep = (2.0f * PI) / segments;
@@ -16,18 +21,13 @@ void generateCylinder(int segments) {
     // Allocate memory for vertices
     cylinderVertices = (float*)malloc(numFloats * sizeof(float));
 
-    if (!cylinderVertices) {
-        fprintf(stderr, "Failed to allocate memory for cylinder vertices.\n");
-        exit(EXIT_FAILURE);
-    }
-
     size_t offset = 0;
 
     for (int i = 0; i < segments; ++i) {
         float angle = i * angleStep;
         float nextAngle = (i + 1) * angleStep;
 
-        // Base center
+        // Base center - we are building a triangle fan, so all of the triangles on the bottom will share this vertex
         float bx = 0.0f, by = -1.0f, bz = 0.0f;
         float baseCenterUV[] = {0.5f, 0.5f};
 
@@ -94,24 +94,19 @@ void generateCylinder(int segments) {
 }
 
 void setupCylinder(int segments) {
-    // Generate cylinder vertex data
     generateCylinder(segments);
 
-    // Create VAO and VBO
     glGenVertexArrays(1, &VAOC);
     glGenBuffers(1, &VBOC);
 
     glBindVertexArray(VAOC);
     glBindBuffer(GL_ARRAY_BUFFER, VBOC);
 
-    // Buffer data to GPU
     glBufferData(GL_ARRAY_BUFFER, numVertices * 8 * sizeof(float), cylinderVertices, GL_STATIC_DRAW);
 
-    // Position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Normal attribute
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
@@ -121,7 +116,6 @@ void setupCylinder(int segments) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    // Free dynamically allocated memory
     free(cylinderVertices);
     cylinderVertices = NULL;
 }
@@ -130,7 +124,6 @@ void drawCylinder(GLuint shader, glm::vec3 position, glm::vec3 scalar, float ph,
     glUseProgram(shader);
     GLint textureLoc = glGetUniformLocation(shader, "image");
 
-    // Update model matrix (implementation of `model` function is assumed)
     model(shader, position, ph, th, scalar);
 
     glActiveTexture(GL_TEXTURE0);

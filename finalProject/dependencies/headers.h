@@ -5,7 +5,7 @@
 #include <cglm/cglm.h>
 #include <string.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>    // For lookAt function
+#include <glm/gtc/matrix_transform.hpp> 
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>

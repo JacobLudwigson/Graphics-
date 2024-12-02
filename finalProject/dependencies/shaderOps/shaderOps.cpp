@@ -1,8 +1,10 @@
 #include "shaderOps.h"
-// Read shader source from file
 std::vector<Light> lightsInScene(NUMLIGHTSINSCENE);
 std::vector<dirLight> dirLightsInScene(NUMDIRLIGHTSINSCENE);
-
+/*
+    These three shader compilation functions are not my own. Written using chatGPT
+    readShaderSource(), compileShader(), createShaderProgram()
+*/
 char* readShaderSource(const char* shaderFile) {
     FILE* file = fopen(shaderFile, "rb");
     if (!file) {
@@ -21,8 +23,6 @@ char* readShaderSource(const char* shaderFile) {
     fclose(file);
     return buffer;
 }
-
-// Compile shader
 GLuint compileShader(GLenum shaderType, const char* source) {
     GLuint shader = glCreateShader(shaderType);
     glShaderSource(shader, 1, &source, NULL);
@@ -45,8 +45,6 @@ GLuint compileShader(GLenum shaderType, const char* source) {
 
     return shader;
 }
-
-// Create shader program
 GLuint createShaderProgram(const char* vertexShaderPath, const char* fragmentShaderPath) {
     char* vertexSource = readShaderSource(vertexShaderPath);
     char* fragmentSource = readShaderSource(fragmentShaderPath);
@@ -89,17 +87,12 @@ GLuint createShaderProgram(const char* vertexShaderPath, const char* fragmentSha
 
     return program;
 }
-/*
-    void mdoel(GLuint shader,float x, float y, float z, float th, float ph):
-        Defines a uniform in the vertex shader to rotate vertices in the scene by (th,ph) and translate by (x,y,z)
-*/
+
+
 void model(GLuint shader,glm::vec3 translation, float ph, float th, glm::vec3 scale) {
-    /*
-        Rotate by where user is looking and pass that rotation matrix to our shader
-    */
     GLint transformLoc = glGetUniformLocation(shader, "model");
 
-    mat4 transform = GLM_MAT4_IDENTITY_INIT; // Start with identity matrix
+    mat4 transform = GLM_MAT4_IDENTITY_INIT;
     glm_translate(transform, &translation[0]);
     glm_rotate_x(transform, degreesToRadians(ph), transform);
     glm_rotate_y(transform, degreesToRadians(th), transform);
@@ -115,9 +108,6 @@ void model(GLuint shader,glm::vec3 translation, float ph, float th, glm::vec3 sc
     asp = Aspect Ratio, calculated as float(width)/float(height)
 */
 void projection(GLuint shader,float fov, float near, float far, float asp) {
-    /*
-        Rotate by where user is looking and pass that rotation matrix to our shader
-    */
     GLint projectionLoc = glGetUniformLocation(shader, "projection");
     if(projectionLoc == -1){
         printf("FAILURE!");
@@ -130,7 +120,7 @@ void projection(GLuint shader,float fov, float near, float far, float asp) {
 void orthoProjection(GLuint shader, float left, float right, float bottom, float top, float near, float far) {
     GLint projectionLoc = glGetUniformLocation(shader, "projection");
     mat4 projection;
-    glm_ortho(left, right, bottom, top, near, far, projection); // Use an orthographic projection
+    glm_ortho(left, right, bottom, top, near, far, projection);
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, &projection[0][0]);
 }
 void setViewMatrix(GLuint shader, glm::vec3 playerPosition, int angleX, int angleY) {
@@ -171,7 +161,6 @@ void initDirLightingUniforms(GLuint shader){
 void setFragLightingUniforms(GLuint shader, glm::vec3 playerPos){
     GLint viewPosLoc = glGetUniformLocation(shader, "viewPos"); 
     glUniform3fv(viewPosLoc, 1, &playerPos[0]);
-    //To be totally honest I am not quite sure how this works, but it works! Uniform buffer objects!
     glBindBuffer(GL_UNIFORM_BUFFER, ubo);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Light) * NUMLIGHTSINSCENE, lightsInScene.data());
     glBindBuffer(GL_UNIFORM_BUFFER, uboD);
@@ -180,12 +169,6 @@ void setFragLightingUniforms(GLuint shader, glm::vec3 playerPos){
 void setMaterialUniforms(GLuint shaderProgram, Material& material) {
     GLint ambientLoc = glGetUniformLocation(shaderProgram, "mat.ambientReflect");
     glUniform3fv(ambientLoc, 1, glm::value_ptr(material.ambientReflect));
-    // if (ambientLoc == -1) {
-    //     // std::cerr << "Error: 'mat.ambientReflect' uniform not found!" << std::endl;
-    // }
-    // else{
-    //     printf("AMBIENT LOC FOUND & SET!\n");
-    // }
     glUniform3fv(glGetUniformLocation(shaderProgram, "mat.diffuseReflect"), 1, glm::value_ptr(material.diffuseReflect));
     glUniform3fv(glGetUniformLocation(shaderProgram, "mat.specularReflect"), 1, glm::value_ptr(material.specularReflect));
     glUniform3fv(glGetUniformLocation(shaderProgram, "mat.objectColor"), 1, glm::value_ptr(material.objectColor));
