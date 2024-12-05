@@ -7,13 +7,14 @@ else
 # OSX
 ifeq ($(shell uname), Darwin)
 CFLG=-O3 -Wall -Wno-deprecated-declarations -DRES=1
-LIBS=-framework GLUT -framework OpenGL
+#hopefully this works - apparently glfw relies on Cocoa and IOKit on Mac
+LIBS=-lglfw -lfreeimage -lglew -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 # Linux/Unix/Solaris
 else
 CFLG=-O3 -Wall
-LIBS=-lglut -lGLU -lGL -lm
+LIBS=-lglfw -lfreeimage -lGLU -lGL -lm
 endif
-CLEAN=rm -f gears *.o *.a
+CLEAN=rm  *.o *.a
 endif
 
 CSCI_DIR = dependencies

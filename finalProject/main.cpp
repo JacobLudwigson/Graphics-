@@ -1,17 +1,17 @@
 #include "dependencies/linker.h"
 
-#define WIDTH 1920.0f
-#define HEIGHT 1080.0f
+#define WIDTH 600.0f
+#define HEIGHT 600.0f
 #define SCENEXWIDTH 36
 #define SCENEZWIDTH 120
 #define NUMTEXTURES 15
 
-int angleX = 0;
+int angleX = 180;
 int angleY = 0;
 float tick = 0;
 float playerX = 0.0;
 float playerY = 5.0;
-float playerZ = 0;
+float playerZ = 100;
 float angle = 0;
 int mode = 1;
 unsigned int textures[NUMTEXTURES];
@@ -20,6 +20,8 @@ float lastMouseY = HEIGHT / 2.0f;
 bool firstMouse = false; 
 float mouseSensitivity = 0.2f;
 bool walkabilityBitmap[SCENEZWIDTH][SCENEXWIDTH];
+GLuint* shaderPtr;
+float aspectRatio;
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     if (firstMouse) {
@@ -197,6 +199,14 @@ void updatePlayerCords(double stepSize, int tempTH, int tempPH){
     }
 }
 void processInput(GLFWwindow *window) {
+   if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        angleY += 2;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        angleY -= 2;
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        angleX -= 2;
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        angleX += 2;
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, 1);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -491,7 +501,7 @@ void drawShipInterior(GLuint shader, glm::vec3 pos, int ph, int th){
 
 
 
-    drawChair(shader,pos + glm::vec3(-6,1,2), 2, 0, 0);
+    drawChair(shader,pos + glm::vec3(0,1,2), 2, 0, 0);
 
 }
 void drawShip(GLuint shader, glm::vec3 shipPos){
@@ -526,6 +536,27 @@ void drawShip(GLuint shader, glm::vec3 shipPos){
     // drawCube(shader, 10,10,10,10,0.1,0.1,angleY,angleX);
     tick += 0.1;
 }
+void render(GLuint shaderProgram){
+    glm::vec3 playerPos = glm::vec3(playerX, playerY, playerZ);
+    projection(shaderProgram, 60.0f, 0.1f, 200.0f, aspectRatio);
+    setViewMatrix(shaderProgram, playerPos, angleX, angleY);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    drawShip(shaderProgram, glm::vec3(0,0,0));
+}
+void window_size_callback(GLFWwindow* window, int width, int height)
+{
+    aspectRatio = (height>0) ? (double)width/height : 1;
+    //Window callbacks wont let me pass the shader as a param, so we have to work around.
+    GLuint shaderProgram = *shaderPtr;
+    glViewport(0,0, width, height);
+    projection(shaderProgram, 60.0f, 0.1f, 200.0f, aspectRatio);
+
+    glfwSetWindowSize(window, width, height);
+    render(shaderProgram);
+    glfwSwapBuffers(window);
+}
+
 int main() {
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
@@ -537,12 +568,14 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Triangle Window", NULL, NULL);
+    
     if (!window) {
         fprintf(stderr, "Failed to create GLFW window\n");
         glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(window);
+    glfwSetWindowSizeCallback(window, window_size_callback);
 
     if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Failed to initialize GLEW\n");
@@ -553,12 +586,13 @@ int main() {
     
 
     GLuint shaderProgram = createShaderProgram("dependencies/shaders/vertexShader.glsl", "dependencies/shaders/fragShader.glsl");
+    shaderPtr = &shaderProgram;
 
     if (shaderProgram == 0) {
         fprintf(stderr, "Failed to create shader program\n");
         return -1;
     }
-    float aspectRatio = WIDTH/HEIGHT;
+    aspectRatio = WIDTH/HEIGHT;
     glEnable(GL_DEPTH_TEST);
     // glEnable(GL_CULL_FACE);
 
@@ -582,29 +616,23 @@ int main() {
         return 0;
     }
 
-    glfwSetCursorPosCallback(window, mouse_callback);
+    // glfwSetCursorPosCallback(window, mouse_callback);
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     setupHalfCube();
     setupCube();
     setupCylinder(20);
     setupSphere(40);
-    glm::vec3 shipPos = glm::vec3(0,0,0);
 
-    setParamsParticles(glm::vec3(0,3,0), glm::vec3(0,-3,0), 1.80, 0.2, 0.0, 0.88, 2.0f, 1.80f, 0.995);
+    setParamsParticles(glm::vec3(0,3,0), glm::vec3(0,-3,0), 1.80, 0.2, 0.0, 0.90, 2.0f, 1.80f, 0.994);
     initParticles();
     generateWalkabilityBitmap(glm::vec3(50,0,50));
 
     initLightingUniforms(shaderProgram);
     initDirLightingUniforms(shaderProgram);
     while (!glfwWindowShouldClose(window)) {
-        glm::vec3 playerPos = glm::vec3(playerX, playerY, playerZ);
         processInput(window);
-        projection(shaderProgram, 60.0f, 0.1f, 200.0f, aspectRatio);
-        setViewMatrix(shaderProgram, playerPos, angleX, angleY);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        drawShip(shaderProgram, shipPos);
+        render(shaderProgram);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
