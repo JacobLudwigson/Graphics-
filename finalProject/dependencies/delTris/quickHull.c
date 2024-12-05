@@ -5,7 +5,17 @@ void QUICKHULL::Quickhull(){
 void QUICKHULL::~Quickhull(){
     
 }
-glm::vec3 computeSurfaceNormal(Face f) {
+void pushFaceToDrawArr(Face f){
+    
+    readyToDraw.push_back(f.a.x);
+    readyToDraw.push_back(f.a.y);
+    readyToDraw.push_back(f.a.z);
+    readyToDraw.push_back(f.a.x);
+    readyToDraw.push_back(f.a.y);
+    readyToDraw.push_back(f.a.z);
+
+}
+glm::vec3 QUICKHUL::computeSurfaceNormal(Face f) {
     // Compute two edges of the triangle
     glm::vec3 A,B,C;
     A = f.a;
@@ -20,7 +30,7 @@ glm::vec3 computeSurfaceNormal(Face f) {
     // Normalize the result to ensure the normal is a unit vector
     return glm::normalize(normal);
 }
-void calcFacesFromTetra(Tetrahedron tetra, Face* faceArr){
+void QUICKHULL::calcFacesFromTetra(Tetrahedron tetra, Face* faceArr){
     faceArr[0] = {tetra.a, tetra.b, tetra.c}; // This is the base triangle we found before;
     faceArr[1] = {tetra.a, tetra.b, tetra.d};
     faceArr[2] = {tetra.b, tetra.c, tetra.d};
@@ -44,7 +54,7 @@ float QUICKHULL::distance(glm::vec3 p1, glm::vec3 p2){
                 ((p2.y - p1.y) * (p2.y - p1.y)) + 
                 ((p2.z - p1.z) * (p2.z - p1.z)));
 }
-glm::vec3 calcMeanOfTetraVectors(Tetrahedron tetra){
+glm::vec3 QUICKHULL::calcMeanOfTetraVectors(Tetrahedron tetra){
     return (tetra.a + tetra.b + tetra.c + tetra.d)/4.0f
 }
 //In this phase, 
@@ -116,10 +126,44 @@ void QUICKHULL::initQuickhull(){
     5. Assign all points off all light faces to the new created faces
     6. Push new created faces on the stack, and start at 1. Do not push faces with no facePointSets 
 */
-void runQuickHull(){
+void QUICKHULL::runQuickHull(){
     int indexInPointsArr;
     while (!faceStack.empty()){
         Face currFace = faceStack.top()
         faceStack.pop();
     }
+}
+void QUICKHULL::setHull(){
+    glGenVertexArrays(1, &VAOQ);
+    glGenBuffers(1, &VBOQ);
+
+    glBindVertexArray(VAOQ);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOQ);
+    glBufferData(GL_ARRAY_BUFFER, readyToDraw.size() * sizeof(float), readyToDraw, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+void QUICKHULL::drawHull(Gluint shader, glm::vec3 position, glm::vec3 scalar, float ph, float th, unsigned int texture){
+    glUseProgram(shader);
+    GLint textureLoc = glGetUniformLocation(shader, "image");
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1i(textureLoc, 0);
+
+    model(shader, position, ph,th, scalar);
+    
+    glBindVertexArray(VAOQ);
+    glDrawArrays(GL_TRIANGLES, 0, (readyToDraw.size() * sizeof(float))/3);
+    glBindVertexArray(0);
 }

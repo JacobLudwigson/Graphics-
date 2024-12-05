@@ -144,3 +144,7 @@ void separateParticle(particle *p1) {
     redMatter.emplace_back(p2);
     return;
 }
+
+void drawConvexHull(){
+
+}
