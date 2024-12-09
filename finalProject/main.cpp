@@ -1,19 +1,33 @@
 #include "dependencies/linker.h"
-
-#define WIDTH 600.0f
-#define HEIGHT 600.0f
+/*
+    KEYS:
+        Player Movement: WASD
+        Camera Movement: Arrows/Mouse
+        God Mode: Space- Off, M - On
+        Flashlight: F-On G-Off
+        Particle Movement: 1 - On, 2-Off (default: on)
+        Draw Convex Hull: 3-On, 4-Off (default: on)
+        Ship Lights On: 5 - On, 6- Off (default: off)
+*/
+#define WIDTH 1920.0f
+#define HEIGHT 1080.0f
 #define SCENEXWIDTH 36
 #define SCENEZWIDTH 120
 #define NUMTEXTURES 15
 
-int angleX = 180;
+int angleX = 0;
 int angleY = 0;
 float tick = 0;
 float playerX = 0.0;
+float playerVelocityX = 0.0;
+
 float playerY = 5.0;
+float playerVelocityY = 0.0;
 float playerZ = 100;
+float playerVelocityZ = 0.0;
 float angle = 0;
-int mode = 1;
+int mode = 0;
+int shipLights = 0;
 unsigned int textures[NUMTEXTURES];
 float lastMouseX = WIDTH / 2.0f;
 float lastMouseY = HEIGHT / 2.0f;
@@ -21,8 +35,88 @@ bool firstMouse = false;
 float mouseSensitivity = 0.2f;
 bool walkabilityBitmap[SCENEZWIDTH][SCENEXWIDTH];
 GLuint* shaderPtr;
+GLuint* flashShaderPtr;
 float aspectRatio;
+QUICKHULL* quickhullInstance;
+ParticleSystem* tankParticles;
 
+bool flashlight = false;
+bool qHull = true;
+bool drawLights = false;
+void updatePlayerCords(double stepSize, int tempTH, int tempPH){
+    //if we take a Z unit vector and rotate it around the x axis counterclockwise we can calculate how our elevation angle will affect the direction of our movement: | 1   0         0   | |0| = |    0   |
+    //                                                                                                                                                                | 0 cos(ph)  sin(ph)| |0|   |Sin(ph)|
+    //                                                                                                                                                                | 0 -sin(ph) cos(ph)| |1|   |Cos(ph)|
+
+    //Now we can take the resulting vector and counterclockwise rotate it around the Y axis, so as to calculate how our azimuth will change the direction of movement | cos(th)    0 -sin(th) | |   0   |= |-Sin(th) * Cos(ph)|
+    //                                                                                                                                                                |    0       1     0    | |Sin(ph)|  |       Sin(ph)    |
+    //                                                                                                                                                                |  sin(th)   0  cos(th) | |Cos(ph)|  | Cos(th) * Cos(ph)|
+    float r2_x_1 = -Sin(tempTH) * Cos(tempPH);
+    float r2_y_1 = Sin(tempPH);
+    float r2_z_1 = Cos(tempTH) * Cos(tempPH);
+
+    if (mode == 0){
+        if (walkabilityBitmap[(int)ceil(playerZ+ 10 +r2_z_1 * stepSize)] [(int)ceil(playerX + 20 + r2_x_1 * stepSize)]){
+            playerX += r2_x_1 * stepSize;
+            playerZ += r2_z_1 * stepSize;
+        }
+    }
+    else {
+        playerX += r2_x_1 * stepSize;
+        playerY += r2_y_1 * stepSize;
+        playerZ += r2_z_1 * stepSize;
+    }
+}
+void processInput(GLFWwindow *window) {
+   if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        angleY += 2;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        angleY -= 2;
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        angleX -= 2;
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        angleX += 2;
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, 1);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        updatePlayerCords(0.3,angleX, angleY); 
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        updatePlayerCords(-0.3,angleX-90,180);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        updatePlayerCords(-0.3,angleX,angleY);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        updatePlayerCords(-0.3,angleX + 90,180);
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
+        mode = 0;
+    }
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS){
+        mode = 1;
+    }
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS){
+        tankParticles->updateMove(1);
+    }
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS){
+        tankParticles->updateMove(0);
+    }
+    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS){
+        qHull = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS){
+        qHull = false;
+    }
+    if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS){
+        shipLights = 1;
+    }
+    if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS){
+        shipLights = 0;
+    }
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS){
+        flashlight = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS){
+        flashlight = false;
+    }
+}
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     if (firstMouse) {
         lastMouseX = xpos;
@@ -174,102 +268,57 @@ void printMyStupidPlayerCollisions(){
         printf("\n");
     }
 }
-void updatePlayerCords(double stepSize, int tempTH, int tempPH){
-    //if we take a Z unit vector and rotate it around the x axis counterclockwise we can calculate how our elevation angle will affect the direction of our movement: | 1   0         0   | |0| = |    0   |
-    //                                                                                                                                                                | 0 cos(ph)  sin(ph)| |0|   |Sin(ph)|
-    //                                                                                                                                                                | 0 -sin(ph) cos(ph)| |1|   |Cos(ph)|
-
-    //Now we can take the resulting vector and counterclockwise rotate it around the Y axis, so as to calculate how our azimuth will change the direction of movement | cos(th)    0 -sin(th) | |   0   |= |-Sin(th) * Cos(ph)|
-    //                                                                                                                                                                |    0       1     0    | |Sin(ph)|  |       Sin(ph)    |
-    //                                                                                                                                                                |  sin(th)   0  cos(th) | |Cos(ph)|  | Cos(th) * Cos(ph)|
-    float r2_x_1 = -Sin(tempTH) * Cos(tempPH);
-    float r2_y_1 = Sin(tempPH);
-    float r2_z_1 = Cos(tempTH) * Cos(tempPH);
-
-    if (mode == 1){
-        if (walkabilityBitmap[(int)ceil(playerZ+ 10 +r2_z_1 * stepSize)] [(int)ceil(playerX + 20 + r2_x_1 * stepSize)]){
-            playerX += r2_x_1 * stepSize;
-            playerZ += r2_z_1 * stepSize;
-        }
-    }
-    else {
-        playerX += r2_x_1 * stepSize;
-        playerY += r2_y_1 * stepSize;
-        playerZ += r2_z_1 * stepSize;
-    }
-}
-void processInput(GLFWwindow *window) {
-   if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        angleY += 2;
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        angleY -= 2;
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        angleX -= 2;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        angleX += 2;
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, 1);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        updatePlayerCords(0.3,angleX, angleY); 
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        updatePlayerCords(-0.3,angleX-90,180);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        updatePlayerCords(-0.3,angleX,angleY);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        updatePlayerCords(-0.3,angleX + 90,180);
-    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS){
-        mode += 1;
-        mode %= 2;
-    }
-}
 void drawLightsInScene(GLuint shader){
-    float radius = 50;
+    playerVelocityX = -Sin(angleX) * Cos(angleY);
+    playerVelocityY = Sin(angleY);
+    playerVelocityZ = Cos(angleX) * Cos(angleY);
+    glm::vec3 playerVelocity = glm::vec3(playerVelocityX, playerVelocityY, playerVelocityZ);
     glm::vec3 playerPos = {playerX,playerY,playerZ};
-    // playerPos = {0,0,0};
 
     setFragLightingUniforms(shader,playerPos);
-    float specularConst = 100.0f;
     setMaterialUniforms(shader, LightMaterial);
-    glm::vec3 lightPos = glm::vec3(radius * Cos(tick), 10,50 +  radius * Sin(tick));
     glm::vec3 lightPos2 = glm::vec3(0,7, 93);
 
-    Light l1 = {
+    dirLight flashLight = {
+        .position = playerPos + playerVelocity,
+        .direction = playerVelocity,
         .ambientComponent = glm::vec3(1.0,1.0,1.0),
         .diffuseComponent = glm::vec3(1.0,1.0,1.0),
         .specularComponent = glm::vec3(1.0,1.0,1.0),
-        .specularConstant = specularConst,
-        .lightColor = glm::vec3(1.0,1.0,1.0),
-        .lightPos = lightPos
+        .innerCutoff = glm::cos(glm::radians(12.0f)),
+        .lightColor = glm::vec3(0.0,0.0,0.0),
+        .outerCutoff = glm::cos(glm::radians(30.0f))
     };
-    dirLight l4 = {
-        .position = lightPos2,
-        .direction = glm::vec3(0.0,-1.0,0.0),
-        .ambientComponent = glm::vec3(1.0,1.0,1.0),
-        .diffuseComponent = glm::vec3(1.0,1.0,1.0),
-        .specularComponent = glm::vec3(1.0,1.0,1.0),
-        .innerCutoff = glm::cos(glm::radians(45.0f)), // Inner cone angle
-        .lightColor = glm::vec3(1.0,0.0,0.0),
-        .outerCutoff = glm::cos(glm::radians(90.0f))
-    };
-    dirLight tvScreen = {
-        .position = glm::vec3(0,5,-5.9),
-        .direction = glm::vec3(0.0,0.0,1.0),
-        .ambientComponent = glm::vec3(1.0,1.0,1.0),
-        .diffuseComponent = glm::vec3(1.0,1.0,1.0),
-        .specularComponent = glm::vec3(1.0,1.0,1.0),
-        .innerCutoff = glm::cos(glm::radians(100.0f)), // Inner cone angle
-        .lightColor = glm::vec3(1.0,1.0,1.0),
-        .outerCutoff = glm::cos(glm::radians(180.0f))
-    };
+
     lightsInScene[0] = l1;
     dirLightsInScene[0] = l4;
     dirLightsInScene[1] = tvScreen;
+    dirLightsInScene[2] = hallwayLight1;
+    dirLightsInScene[3] = hallwayLight2;
+    dirLightsInScene[4] = hallwayLight3;
+    dirLightsInScene[5] = hallwayLight4;
+    dirLightsInScene[6] = hallwayLight5;
+    dirLightsInScene[7] = hallwayLight6;
+    dirLightsInScene[8] = hallwayLight7;
+    dirLightsInScene[9] = hallwayLight8;
+    dirLightsInScene[10] = flashLight;
+    dirLightsInScene[11] = powerLight1; 
+    dirLightsInScene[12] = powerLight2;
 
+    if (shipLights == 0){
+        for (int i = 2; i < 10; i++){
+            dirLightsInScene[i].lightColor = glm::vec3(0.0,0.0,0.0);
+        }
+    }
+    if (flashlight){
+        dirLightsInScene[10].lightColor = glm::vec3(1.0,1.0,1.0);
+    }
 
-    drawSphere(shader, lightPos, glm::vec3(1.0f, 1.0f, 1.0f), 0, 0, textures[1]);
-    // drawSphere(shader, lightPos1, glm::vec3(1.0f, 1.0f, 1.0f), 0, 0, textures[1]);
     setMaterialUniforms(shader, fire);
     drawSphere(shader, lightPos2, glm::vec3(2.0f, 0.1f, 2.0f), 0, 0, textures[1]);
+    drawSphere(shader, powerLight1.position, glm::vec3(2.0f, 0.1f, 2.0f), 0, 0, textures[1]);
+    drawSphere(shader, powerLight2.position, glm::vec3(2.0f, 0.1f, 2.0f), 0, 0, textures[1]);
+
 }
 void drawChair(GLuint shader, glm::vec3 pos, float scaleFactor, int ph, int th){
     // Pole & cylinder & cube on top of pole
@@ -398,14 +447,14 @@ void drawWalls(GLuint shader, glm::vec3 pos, int ph, int th, float height, unsig
     drawCube(shader,pos + glm::vec3(-5,4,60),glm::vec3(0.5,height,5),ph, th, textures[wallTex]);
 
     //Middle Window Sills
-    drawCube(shader,pos + glm::vec3(0,0.6,34),glm::vec3(0.5,1.5,5),ph, th+90, textures[2]);
-    drawCube(shader,pos + glm::vec3(0,7.4,34),glm::vec3(0.5,1.5,5),ph, th+90, textures[2]);
+    drawCube(shader,pos + glm::vec3(0,0.6,34),glm::vec3(0.5,0.8,5),ph, th+90, textures[2]);
+    drawCube(shader,pos + glm::vec3(0,7.4,34),glm::vec3(0.5,0.8,5),ph, th+90, textures[2]);
 
     drawCube(shader,pos + glm::vec3(5.1,4,34.5),glm::vec3(0.5,0.99,5),ph + 90, th, textures[2]);
     drawCube(shader,pos + glm::vec3(-5.1,4,34.5),glm::vec3(0.5,0.99,5),ph + 90, th, textures[2]);
 
-    drawCube(shader,pos + glm::vec3(0,0.6,66),glm::vec3(0.5,1.5,5),ph, th+90, textures[2]);
-    drawCube(shader,pos + glm::vec3(0,7.4,66),glm::vec3(0.5,1.5,5),ph, th+90, textures[2]);
+    drawCube(shader,pos + glm::vec3(0,0.6,66),glm::vec3(0.5,0.8,5),ph, th+90, textures[2]);
+    drawCube(shader,pos + glm::vec3(0,7.4,66),glm::vec3(0.5,0.8,5),ph, th+90, textures[2]);
 
     drawCube(shader,pos + glm::vec3(5.1,4,65.5),glm::vec3(0.5,0.99,5),ph + 90, th, textures[2]);
     drawCube(shader,pos + glm::vec3(-5.1,4,65.5),glm::vec3(0.5,0.99,5),ph + 90, th, textures[2]);
@@ -442,6 +491,13 @@ void drawTransparentObjects(GLuint shader, glm::vec3 pos, int ph, int th, float 
     setMaterialUniforms(shader, polishedMetal);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    setMaterialUniforms(shader, glass);
+    drawCylinder(shader, pos + glm::vec3(0,4,93), glm::vec3(2, height/0.99, 2), ph, th, textures[glassTex]);
+    // drawCylinder(shader, pos + glm::vec3(0,4,50), glm::vec3(2, height/0.99, 2), ph, th, textures[glassTex]);
+
+    // drawCylinder(shader, pos + glm::vec3(0,4,50), glm::vec3(2, height/0.99, 2), ph+90, th+90, textures[glassTex]);
+    setMaterialUniforms(shader, fire);
+    drawSphere(shader, pos + glm::vec3(0,4,50), glm::vec3(4,4,4), ph, th, textures[windowTex]);
     setMaterialUniforms(shader, gold);
     drawCube(shader,pos + glm::vec3(0,4,34),glm::vec3(0.25,height * 0.99,5),ph, th+90, textures[windowTex]);
     drawCube(shader,pos + glm::vec3(0,4,66),glm::vec3(0.25,height * 0.99,5),ph, th+90, textures[windowTex]);
@@ -451,8 +507,7 @@ void drawTransparentObjects(GLuint shader, glm::vec3 pos, int ph, int th, float 
 
     drawCube(shader,pos + glm::vec3(15,4,90),glm::vec3(0.25,height * 0.99,5),ph, th, textures[windowTex]);
     drawCube(shader,pos + glm::vec3(-15,4,90),glm::vec3(0.25,height * 0.99,5),ph, th, textures[windowTex]);
-    setMaterialUniforms(shader, glass);
-    drawCylinder(shader, pos + glm::vec3(0,4,93), glm::vec3(2, height/0.99, 2), ph, th, textures[glassTex]);
+
     glDisable(GL_BLEND);
 }
 void drawRedMatterHold(GLuint shader, glm::vec3 pos, int ph, int th, float height, unsigned int glassTex, unsigned int shipMatTex){
@@ -498,12 +553,81 @@ void drawShipInterior(GLuint shader, glm::vec3 pos, int ph, int th){
 
     drawCylinder(shader,pos + glm::vec3(0,3.0001,-6),glm::vec3(4,0.1,4),ph+ 180, th, textures[7]);
 
-
-
-
     drawChair(shader,pos + glm::vec3(0,1,2), 2, 0, 0);
+    // drawChair(shader,pos + glm::vec3(0,1,8), 2, 0, 180);
+    
+    // setMaterialUniforms(shader,polishedMetal);
+    // drawCube(shader, pos + glm::vec3(0,3.4,107), glm::vec3(6,0.1,3), ph, th, textures[5]);
+
+    // drawCube(shader, pos + glm::vec3(0,3.4,107), glm::vec3(6,0.1,3), ph, th, textures[5]);
+
+    // drawHalfCube(shader, pos + glm::vec3(0,2,100), glm::vec3(2,2,2), ph+270, th, textures[5]);
+}
+void drawHallwayLight(GLuint shader, glm::vec3 pos, int ph, int th){
+    setMaterialUniforms(shader, darkMetal);
+    drawHalfCube(shader, pos + glm::vec3(-10,7,86), glm::vec3(0.8,0.8,1),ph+180, th+180, textures[7]);
+    drawHalfCube(shader, pos + glm::vec3(10,7,86), glm::vec3(0.8,0.8,1),ph+180, th+180, textures[7]);
+    drawHalfCube(shader, pos + glm::vec3(-10,7,14), glm::vec3(0.8,0.8,1),ph+180, th, textures[7]);
+    drawHalfCube(shader, pos + glm::vec3(10,7,14), glm::vec3(0.8,0.8,1),ph+180, th, textures[7]);
+
+    drawHalfCube(shader, pos + glm::vec3(-14,6.5,40), glm::vec3(0.8,0.8,1),ph+180, th + 90, textures[7]);
+    drawHalfCube(shader, pos + glm::vec3(14,6.5,40), glm::vec3(0.8,0.8,1),ph+180, th + 270, textures[7]);
+
+    drawHalfCube(shader, pos + glm::vec3(-14,6.5,60), glm::vec3(0.8,0.8,1),ph+180, th + 90, textures[7]);
+    drawHalfCube(shader, pos + glm::vec3(14,6.5,60), glm::vec3(0.8,0.8,1),ph+180, th + 270, textures[7]);
+    setMaterialUniforms(shader, LightMaterial);
+
+    drawCube(shader, pos + glm::vec3(-10,7,86), glm::vec3(0.1,0.6,0.8),ph+45, th+180, textures[7]);
+    drawCube(shader, pos + glm::vec3(10,7,86), glm::vec3(0.1,0.6,0.8),ph+45, th+180, textures[7]);
+    drawCube(shader, pos + glm::vec3(-10,7,14), glm::vec3(0.1,0.6,0.8),ph+135, th+180, textures[7]);
+    drawCube(shader, pos + glm::vec3(10,7,14), glm::vec3(0.1,0.6,0.8),ph+135, th+180, textures[7]);
+
+    drawHalfCube(shader, pos + glm::vec3(-14.2,6.3,40), glm::vec3(0.7,0.6,0.8),ph+180, th + 90, textures[7]);
+    drawHalfCube(shader, pos + glm::vec3(14.2,6.3,40), glm::vec3(0.7,0.6,0.8),ph+180, th + 270, textures[7]);
+
+    drawHalfCube(shader, pos + glm::vec3(-14.2,6.3,60), glm::vec3(0.7,0.6,0.8),ph+180, th + 90, textures[7]);
+    drawHalfCube(shader, pos + glm::vec3(14.2,6.3,60), glm::vec3(0.7,0.6,0.8),ph+180, th + 270, textures[7]);
 
 }
+void drawRotatingSupports(GLuint shader, glm::vec3 pos, int ph, int th){
+    setMaterialUniforms(shader, polishedMetal);
+    drawCylinder(shader, pos + glm::vec3(0,13,50), glm::vec3(1,5.4,1), ph, th,textures[4]);
+    drawCylinder(shader, pos + glm::vec3(0,-5,50), glm::vec3(1,5.4,1), ph, th,textures[4]);
+
+    drawCube(shader, pos + glm::vec3(5,4,50), glm::vec3(0.5,2,3), ph, th,textures[2]);
+    drawCube(shader, pos + glm::vec3(-5,4,50), glm::vec3(0.5,2,3), ph, th,textures[2]);
+
+    drawCube(shader, pos + glm::vec3(4.5,4,50), glm::vec3(1,1,1), ph, th,textures[2]);
+    drawCube(shader, pos + glm::vec3(-4.5,4,50), glm::vec3(1,1,1), ph, th,textures[2]);
+
+
+    drawCube(shader, pos + glm::vec3(0,18,50), glm::vec3(1,0.5,2), ph, th,textures[4]);
+    drawCube(shader, pos + glm::vec3(0,23,50), glm::vec3(1,0.5,2), ph, th,textures[4]);
+    drawCube(shader, pos + glm::vec3(0,20.5,52.5), glm::vec3(1,3,0.5), ph, th,textures[4]);
+    drawCube(shader, pos + glm::vec3(0,20.5,47.5), glm::vec3(1,3,0.5), ph, th,textures[4]);
+
+    drawCube(shader, pos + glm::vec3(0,-10,50), glm::vec3(1,0.5,2), ph, th,textures[4]);
+    drawCube(shader, pos + glm::vec3(0,-15,50), glm::vec3(1,0.5,2), ph, th,textures[4]);
+    drawCube(shader, pos + glm::vec3(0,-12.5,52.5), glm::vec3(1,3,0.5), ph, th,textures[4]);
+    drawCube(shader, pos + glm::vec3(0,-12.5,47.5), glm::vec3(1,3,0.5), ph, th,textures[4]);
+    float radius = 16.5f;   
+    glm::vec3 rotation;
+    glm::vec3 orbitCenter;
+    glm::vec3 direction;
+    float th1;
+    float ph1;
+    setMaterialUniforms(shader, fire);
+    for (int i = 0; i < 20; i++){
+        rotation = glm::vec3((radius) * Cos(10*tick+(20*i)), radius * Sin(10*tick+(20*i)),50);
+        orbitCenter = glm::vec3(0.0f, 0.0f, 50.0f); // Center of rotation
+
+        direction = glm::normalize(orbitCenter - rotation);
+        th1 = glm::degrees(atan2(direction.y, direction.x)); // Azimuthal angle
+        ph1 = glm::degrees(acos(direction.z));              // Polar angle
+        drawCube(shader, pos + rotation + glm::vec3(0,4,0), glm::vec3(1,1,3), ph1, th1, textures[6]);
+    }   
+}
+
 void drawShip(GLuint shader, glm::vec3 shipPos){
     glm::vec3 origin = shipPos;
     drawLightsInScene(shader);
@@ -521,8 +645,16 @@ void drawShip(GLuint shader, glm::vec3 shipPos){
     drawWalls(shader, origin, 0, 0 ,5, 4);
     drawRedMatterHold(shader, origin, 0,0, 4, 3, 2);
     setMaterialUniforms(shader, fire);
-    drawParticles(shader, textures[6], origin + glm::vec3(0,4,93));
-    
+    tankParticles->updateQhull(false);
+    tankParticles->updateVelocity(2.0f);
+    tankParticles->updateDrawSizeMult(1.0f);
+    tankParticles->drawParticles(shader, textures[6], origin + glm::vec3(0,4,93), quickhullInstance);
+    tankParticles->updateQhull(qHull);
+    tankParticles->updateDrawSizeMult(0.1f);
+    tankParticles->drawParticles(shader, textures[9], origin+glm::vec3(0,4,50), quickhullInstance);
+    drawRotatingSupports(shader, origin, 0, 0);
+
+    drawHallwayLight(shader, origin, 0, 90);
     drawShipInterior(shader, origin, 0, 0);
     drawTransparentObjects(shader, origin, 0, 0, 5, 3, 10);
 
@@ -534,15 +666,34 @@ void drawShip(GLuint shader, glm::vec3 shipPos){
 
 
     // drawCube(shader, 10,10,10,10,0.1,0.1,angleY,angleX);
-    tick += 0.1;
 }
-void render(GLuint shaderProgram){
+void drawHud(GLuint flashLightShader){
+    // glEnable(GL_BLEND);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // drawLightsInScene(flashLightShader);
+    if (flashlight){
+        // drawCylinder(flashLightShader, glm::vec3(0.6,-0.7,0), glm::vec3(0.2,0.8,0.2),60, 90, textures[1]);
+        setMaterialUniforms(flashLightShader, darkMetal);
+        drawSphere(flashLightShader, glm::vec3(0.4,-0.5,-0.1), glm::vec3(0.1,0.15,0.1),0, 0, textures[11]);
+        drawSphere(flashLightShader, glm::vec3(0.4,-0.5,0.1), glm::vec3(0.11,0.16,0.11),0, 0, textures[7]);
+
+        setMaterialUniforms(flashLightShader, polishedMetal);
+        drawSphere(flashLightShader, glm::vec3(0.7,-0.9,0), glm::vec3(0.8,0.15,0.1),30, 111, textures[11]);
+    
+        // drawCube(flashLightShader, glm::vec3(0.7,-0.9,0), glm::vec3(0.08,0.08,0.5),45, 30, textures[1]);
+    }
+}
+void render(GLuint shaderProgram, GLuint flashLightShader){
     glm::vec3 playerPos = glm::vec3(playerX, playerY, playerZ);
     projection(shaderProgram, 60.0f, 0.1f, 200.0f, aspectRatio);
     setViewMatrix(shaderProgram, playerPos, angleX, angleY);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(flashLightShader);
+    drawHud(flashLightShader);
+    glUseProgram(shaderProgram);
     drawShip(shaderProgram, glm::vec3(0,0,0));
+    
 }
 void window_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -553,7 +704,7 @@ void window_size_callback(GLFWwindow* window, int width, int height)
     projection(shaderProgram, 60.0f, 0.1f, 200.0f, aspectRatio);
 
     glfwSetWindowSize(window, width, height);
-    render(shaderProgram);
+    render(shaderProgram, *flashShaderPtr);
     glfwSwapBuffers(window);
 }
 
@@ -566,8 +717,9 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Triangle Window", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Jacob Ludwigson Final Project", NULL, NULL);
     
     if (!window) {
         fprintf(stderr, "Failed to create GLFW window\n");
@@ -576,17 +728,21 @@ int main() {
     }
     glfwMakeContextCurrent(window);
     glfwSetWindowSizeCallback(window, window_size_callback);
-
+    #ifdef USEGLEW
     if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Failed to initialize GLEW\n");
         return -1;
     }
+    #endif
 
 
     
 
     GLuint shaderProgram = createShaderProgram("dependencies/shaders/vertexShader.glsl", "dependencies/shaders/fragShader.glsl");
+    GLuint flashLightShaders = createShaderProgram("dependencies/shaders/flashLightVert.glsl", "dependencies/shaders/flashLightFrag.glsl");
     shaderPtr = &shaderProgram;
+    flashShaderPtr = &flashLightShaders;
+
 
     if (shaderProgram == 0) {
         fprintf(stderr, "Failed to create shader program\n");
@@ -594,7 +750,12 @@ int main() {
     }
     aspectRatio = WIDTH/HEIGHT;
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_MULTISAMPLE);  
+    // glDisable(GL_DEPTH_TEST); // Temporarily disable depth test to check rendering
+
     // glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
+
 
 
     textures[0] = loadTexture("dependencies/textures/futuristicMosaic.bmp");
@@ -608,6 +769,8 @@ int main() {
     textures[8] = loadTexture("dependencies/textures/tvStatic.png");
     textures[9] = loadTexture("dependencies/textures/4kStars.jpg");
     textures[10] = loadTexture("dependencies/textures/windowTexture.bmp");
+    textures[11] = loadTexture("dependencies/textures/flashLightHandleTex.jpg");
+
 
     if (!textures[0] || !textures[1] || !textures[2] || !textures[3] ||
         !textures[4] || !textures[5] || !textures[6] || !textures[7] ||
@@ -616,23 +779,30 @@ int main() {
         return 0;
     }
 
-    // glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
 
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     setupHalfCube();
     setupCube();
     setupCylinder(20);
     setupSphere(40);
+    quickhullInstance = new QUICKHULL;
+    tankParticles = new ParticleSystem;
+    quickhullInstance->shaderToDraw = shaderProgram;
 
-    setParamsParticles(glm::vec3(0,3,0), glm::vec3(0,-3,0), 1.80, 0.2, 0.0, 0.90, 2.0f, 1.80f, 0.994);
-    initParticles();
+    tankParticles->setParamsParticles(glm::vec3(0,3,0), glm::vec3(0,-3,0), 1.80, 0.7, 0.0, 0.40, 2.0f, 1.80f, 0.998);
+    // powerSystem->setParamsParticles(glm::vec3(0,3,0), glm::vec3(0,-3,0), 1.80, 1.5, 0.0, 0.01, 2.0f, 1.80f, 1.0);
+
+    tankParticles->initParticles();
+    // powerSystem->initParticles();
     generateWalkabilityBitmap(glm::vec3(50,0,50));
 
     initLightingUniforms(shaderProgram);
     initDirLightingUniforms(shaderProgram);
     while (!glfwWindowShouldClose(window)) {
+        tick = glfwGetTime();
         processInput(window);
-        render(shaderProgram);
+        render(shaderProgram, flashLightShaders);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -641,6 +811,7 @@ int main() {
 
     glfwDestroyWindow(window);
     glfwTerminate();
-
+    delete(quickhullInstance);
+    delete(tankParticles);
     return 0;
 }

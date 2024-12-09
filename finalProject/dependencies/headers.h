@@ -1,4 +1,7 @@
+#ifdef USEGLEW
 #include <GL/glew.h>
+#endif
+
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,11 +14,15 @@
 #include <vector>
 #include <FreeImage.h>
 #include <time.h>
+#include <algorithm>
 #include <random>
+#include <set>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/io.hpp>//give me print operator overloading for vec3 types please!
 #define Cos(x) (cos((x)*3.14159265/180))
 #define Sin(x) (sin((x)*3.14159265/180))
 #define NUMLIGHTSINSCENE 1
-#define NUMDIRLIGHTSINSCENE 2
+#define NUMDIRLIGHTSINSCENE 13
 struct Material {
     glm::vec3 ambientReflect;
     glm::vec3 diffuseReflect;

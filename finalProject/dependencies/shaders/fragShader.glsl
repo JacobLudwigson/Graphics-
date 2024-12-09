@@ -1,6 +1,6 @@
 #version 330 core
 const int NUMLIGHTS  = 1;
-const int NUMDIRLIGHTS  = 2;
+const int NUMDIRLIGHTS  = 13;
 
 struct Light {
     vec3 ambientComponent;
@@ -100,16 +100,24 @@ void main() {
 
         vec3 viewDir = normalize(viewPos - FragPos);
         vec3 reflectDir = reflect(-lightDir, norm);
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0); // 32 is the shininess
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 100.0); // 32 is the shininess
         vec3 specular = spec * dirLights[i].specularComponent * dirLights[i].lightColor * mat.specularReflect;
 
         //1.0 constAt + 0.09 linAt + 0.032 quadAt looks pretty mean but maybe not bright enough
         float constAt = 0.25;
         float linearAt = 0.05;
         float quadAt = 0.032;
-        float attenuation = 1.0 / (constAt + linearAt * distance + quadAt * (distance * distance)); // Quadratic attenuation 
+        float attenuation = 1.0 / (constAt + linearAt * distance + quadAt * (distance * distance)); 
+        if (i == NUMDIRLIGHTS){
+            float constAt = 0.0;
+            float linearAt = 0.005;
+            float quadAt = 0.0032;
+            float attenuation = 1.0 / (constAt + linearAt * distance + quadAt * (distance * distance));
+            float epsilon = 0.1;
+            float spotlightIntensity = clamp((theta - dirLights[i].outerCutoff) / epsilon, 0.0, 1.0) * 1.5;
+        }
         vec3 spotlight = (ambient + diffuse + specular) * spotlightIntensity * attenuation;
-
+        
         lighting += spotlight * mat.objectColor;
     }
     vec4 texColor = texture(image, texCoordOut);
