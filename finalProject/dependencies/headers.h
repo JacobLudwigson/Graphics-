@@ -1,7 +1,8 @@
 #ifdef USEGLEW
 #include <GL/glew.h>
 #endif
-
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,8 +18,8 @@
 #include <algorithm>
 #include <random>
 #include <set>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/io.hpp>//give me print operator overloading for vec3 types please!
+// #define GLM_ENABLE_EXPERIMENTAL
+// #include <glm/gtx/io.hpp>//give me print operator overloading for vec3 types please!
 #define Cos(x) (cos((x)*3.14159265/180))
 #define Sin(x) (sin((x)*3.14159265/180))
 #define NUMLIGHTSINSCENE 1

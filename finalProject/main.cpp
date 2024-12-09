@@ -808,7 +808,7 @@ int main() {
     }
 
     glDeleteProgram(shaderProgram);
-
+    glDeleteProgram(flashLightShaders);
     glfwDestroyWindow(window);
     glfwTerminate();
     delete(quickhullInstance);

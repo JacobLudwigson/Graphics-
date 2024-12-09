@@ -235,7 +235,7 @@ void QUICKHULL::runQuickHull(){
     //Pop a face from the stack, access its facePointSet, and attempt to draw triangles from the most distant point.
     for (int it = 0; it < mesh.size(); it++){
         maxIterations += 1;
-        if (maxIterations > 200){
+        if (maxIterations > numIterations){
             break;
         }
         currFace = mesh[it];
@@ -271,7 +271,6 @@ void QUICKHULL::runQuickHull(){
         horizonPoints.assign(uniquePoints.begin(), uniquePoints.end());
         int horizSize = horizonPoints.size();
         if (horizSize < 2){
-            printf("Light Faces: %d, Non-Light Faces: %d\n",lightFaces.size(), nonLightFaces.size());
             printf("Adding non convex shape!\n");
             exit(0);
         }

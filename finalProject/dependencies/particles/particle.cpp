@@ -123,6 +123,7 @@ void ParticleSystem::drawParticles(GLuint shader, unsigned int redMatterTex, glm
     }
     if (redMatter.size() > 5 && qhull){
         // drawSphere(shader,glm::vec3(0,4,93), glm::vec3(50,50,50), 270, 90,0);
+        if (qHull->numIterations > 0){
         if (move){
             setMaterialUniforms(shader, fire);
             qHull->cleanQuickHull();
@@ -132,6 +133,7 @@ void ParticleSystem::drawParticles(GLuint shader, unsigned int redMatterTex, glm
         }
         qHull->setHull();
         qHull->drawHull(shader, pos, glm::vec3(1,1,1), 0, 0,redMatterTex);
+    }
     }
     return;
 }

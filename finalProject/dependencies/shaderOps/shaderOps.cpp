@@ -17,8 +17,13 @@ char* readShaderSource(const char* shaderFile) {
 
     char* buffer = (char*)malloc(fileSize + 1);
     if (buffer) {
-        fread(buffer, 1, fileSize, file);
-        buffer[fileSize] = '\0';
+        if (fread(buffer, 1, fileSize, file)){
+            buffer[fileSize] = '\0';
+        }
+        else{
+            exit(0);
+        }
+        
     }
     fclose(file);
     return buffer;

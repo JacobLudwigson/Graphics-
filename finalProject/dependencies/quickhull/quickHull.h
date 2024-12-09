@@ -46,6 +46,7 @@ class QUICKHULL {
     ~QUICKHULL();
     std::vector <glm::vec3> points;
     GLuint shaderToDraw;
+    unsigned int numIterations = 50;
     glm::vec3 computeSurfaceNormal(Face f);
     glm::vec3 computeCorrectedNormal(Face f, glm::vec3 insidePt);
     void pushFaceToDrawArr(Face f);

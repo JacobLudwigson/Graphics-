@@ -1,6 +1,6 @@
 # MinGW
 ifeq ($(OS), Windows_NT)
-CFLG=-Ofast -Wall -I/mingw64/include
+CFLG=-std=c++17 -Ofast -Wall -I/mingw64/include
 LIBS= -DUSEGLEW -lglfw3 -lFreeImage -lglew32 -lglu32 -lopengl32  -L/mingw64/lib 
 CLEAN=rm *.exe *.o *.a
 else
@@ -11,8 +11,8 @@ CFLG=-O3 -Wall -Wno-deprecated-declarations -DRES=1
 LIBS=-lglfw -lfreeimage -lglew -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 # Linux/Unix/Solaris
 else
-CFLG=-O3 -Wall
-LIBS=-lglfw -lfreeimage -lGLU -lGL -lm
+CFLG=-std=c++17 -Ofast -Wall -I/usr/include -I/usr/local/include
+LIBS= -lglfw -lfreeimage -lGLU -lGL -lm -L/usr/lib -L/usr/local/lib
 endif
 CLEAN=rm  *.o *.a
 endif
