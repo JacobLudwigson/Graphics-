@@ -14,12 +14,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 #include <FreeImage.h>
-#include <time.h>
-#include <algorithm>
 #include <random>
-#include <set>
-// #define GLM_ENABLE_EXPERIMENTAL
-// #include <glm/gtx/io.hpp>//give me print operator overloading for vec3 types please!
 #define Cos(x) (cos((x)*3.14159265/180))
 #define Sin(x) (sin((x)*3.14159265/180))
 #define NUMLIGHTSINSCENE 1

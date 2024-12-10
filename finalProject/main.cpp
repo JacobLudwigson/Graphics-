@@ -15,10 +15,10 @@
 #define SCENEZWIDTH 120
 #define NUMTEXTURES 15
 
-int angleX = 0;
+int angleX = 195;
 int angleY = 0;
 float tick = 0;
-float playerX = 0.0;
+float playerX = 5.0;
 float playerVelocityX = 0.0;
 
 float playerY = 5.0;
@@ -40,7 +40,7 @@ float aspectRatio;
 QUICKHULL* quickhullInstance;
 ParticleSystem* tankParticles;
 
-bool flashlight = false;
+bool flashlight = true;
 bool qHull = true;
 bool drawLights = false;
 void updatePlayerCords(double stepSize, int tempTH, int tempPH){
@@ -549,19 +549,16 @@ void drawShipInterior(GLuint shader, glm::vec3 pos, int ph, int th){
     setMaterialUniforms(shader, brushedMetal);
     drawCube(shader,pos + glm::vec3(7.5,3,-1.5),glm::vec3(3,0.1,8),ph+ 180, th - 45, textures[5]);
     drawCube(shader,pos + glm::vec3(-7.5,3,-1.5),glm::vec3(3,0.1,8),ph+ 180, th + 45, textures[5]);
+
+    setMaterialUniforms(shader, darkMetal);
+    drawCube(shader,pos + glm::vec3(13,5,3.5),glm::vec3(0.1,0.6,0.6),ph+180, th- 45, textures[8]);
+    setMaterialUniforms(shader, gold);
+    drawCube(shader,pos + glm::vec3(13,5,3.5),glm::vec3(0.11,0.5,0.5),ph+180, th- 45, textures[12]);
     setMaterialUniforms(shader, darkMetal);
 
-    drawCylinder(shader,pos + glm::vec3(0,3.0001,-6),glm::vec3(4,0.1,4),ph+ 180, th, textures[7]);
+    drawCylinder(shader,pos + glm::vec3(0,3.0001,-6),glm::vec3(4,0.1,4),ph+ 180, th+45, textures[7]);
 
     drawChair(shader,pos + glm::vec3(0,1,2), 2, 0, 0);
-    // drawChair(shader,pos + glm::vec3(0,1,8), 2, 0, 180);
-    
-    // setMaterialUniforms(shader,polishedMetal);
-    // drawCube(shader, pos + glm::vec3(0,3.4,107), glm::vec3(6,0.1,3), ph, th, textures[5]);
-
-    // drawCube(shader, pos + glm::vec3(0,3.4,107), glm::vec3(6,0.1,3), ph, th, textures[5]);
-
-    // drawHalfCube(shader, pos + glm::vec3(0,2,100), glm::vec3(2,2,2), ph+270, th, textures[5]);
 }
 void drawHallwayLight(GLuint shader, glm::vec3 pos, int ph, int th){
     setMaterialUniforms(shader, darkMetal);
@@ -646,41 +643,28 @@ void drawShip(GLuint shader, glm::vec3 shipPos){
     drawRedMatterHold(shader, origin, 0,0, 4, 3, 2);
     setMaterialUniforms(shader, fire);
     tankParticles->updateQhull(false);
-    tankParticles->updateVelocity(2.0f);
+    tankParticles->updateVelocity(10.0f);
     tankParticles->updateDrawSizeMult(1.0f);
+    tankParticles->updateDrawParticles(true);
     tankParticles->drawParticles(shader, textures[6], origin + glm::vec3(0,4,93), quickhullInstance);
     tankParticles->updateQhull(qHull);
     tankParticles->updateDrawSizeMult(0.1f);
+    tankParticles->updateDrawParticles(true);
     tankParticles->drawParticles(shader, textures[9], origin+glm::vec3(0,4,50), quickhullInstance);
     drawRotatingSupports(shader, origin, 0, 0);
 
     drawHallwayLight(shader, origin, 0, 90);
     drawShipInterior(shader, origin, 0, 0);
     drawTransparentObjects(shader, origin, 0, 0, 5, 3, 10);
-
-
-   
-
-
-    // drawHalfCube(shader,origin,glm::vec3(1,1,1),0, 0, textures[2]);
-
-
-    // drawCube(shader, 10,10,10,10,0.1,0.1,angleY,angleX);
 }
 void drawHud(GLuint flashLightShader){
-    // glEnable(GL_BLEND);
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // drawLightsInScene(flashLightShader);
     if (flashlight){
-        // drawCylinder(flashLightShader, glm::vec3(0.6,-0.7,0), glm::vec3(0.2,0.8,0.2),60, 90, textures[1]);
         setMaterialUniforms(flashLightShader, darkMetal);
         drawSphere(flashLightShader, glm::vec3(0.4,-0.5,-0.1), glm::vec3(0.1,0.15,0.1),0, 0, textures[11]);
         drawSphere(flashLightShader, glm::vec3(0.4,-0.5,0.1), glm::vec3(0.11,0.16,0.11),0, 0, textures[7]);
 
         setMaterialUniforms(flashLightShader, polishedMetal);
         drawSphere(flashLightShader, glm::vec3(0.7,-0.9,0), glm::vec3(0.8,0.15,0.1),30, 111, textures[11]);
-    
-        // drawCube(flashLightShader, glm::vec3(0.7,-0.9,0), glm::vec3(0.08,0.08,0.5),45, 30, textures[1]);
     }
 }
 void render(GLuint shaderProgram, GLuint flashLightShader){
@@ -751,9 +735,6 @@ int main() {
     aspectRatio = WIDTH/HEIGHT;
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);  
-    // glDisable(GL_DEPTH_TEST); // Temporarily disable depth test to check rendering
-
-    // glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
 
 
@@ -770,6 +751,8 @@ int main() {
     textures[9] = loadTexture("dependencies/textures/4kStars.jpg");
     textures[10] = loadTexture("dependencies/textures/windowTexture.bmp");
     textures[11] = loadTexture("dependencies/textures/flashLightHandleTex.jpg");
+    textures[12] = loadTexture("dependencies/textures/IMG_1797.jpeg");
+
 
 
     if (!textures[0] || !textures[1] || !textures[2] || !textures[3] ||
@@ -790,11 +773,9 @@ int main() {
     tankParticles = new ParticleSystem;
     quickhullInstance->shaderToDraw = shaderProgram;
 
-    tankParticles->setParamsParticles(glm::vec3(0,3,0), glm::vec3(0,-3,0), 1.80, 0.7, 0.0, 0.40, 2.0f, 1.80f, 0.998);
-    // powerSystem->setParamsParticles(glm::vec3(0,3,0), glm::vec3(0,-3,0), 1.80, 1.5, 0.0, 0.01, 2.0f, 1.80f, 1.0);
+    tankParticles->setParamsParticles(glm::vec3(0,3,0), glm::vec3(0,-3,0), 1.80, 0.9, 0.0, 0.40, 2.0f, 1.80f, 0.998);
 
     tankParticles->initParticles();
-    // powerSystem->initParticles();
     generateWalkabilityBitmap(glm::vec3(50,0,50));
 
     initLightingUniforms(shaderProgram);
