@@ -13,4 +13,3 @@ extern dirLight hallwayLight5;
 extern dirLight hallwayLight6;
 extern dirLight hallwayLight7;
 extern dirLight hallwayLight8;
-extern dirLight flashLight;

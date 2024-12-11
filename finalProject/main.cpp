@@ -9,13 +9,13 @@
         Draw Convex Hull: 3-On, 4-Off (default: on)
         Ship Lights On: 5 - On, 6- Off (default: off)
 */
-#define WIDTH 1920.0f
-#define HEIGHT 1080.0f
+#define WIDTH 800.0f
+#define HEIGHT 600.0f
 #define SCENEXWIDTH 36
 #define SCENEZWIDTH 120
 #define NUMTEXTURES 15
 
-int angleX = 195;
+int angleX = 175;
 int angleY = 0;
 float tick = 0;
 float playerX = 5.0;
@@ -69,9 +69,9 @@ void updatePlayerCords(double stepSize, int tempTH, int tempPH){
 }
 void processInput(GLFWwindow *window) {
    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        angleY += 2;
+        angleY = ((angleY + 2) > 90) ? 90 : angleY+2;
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        angleY -= 2;
+        angleY = ((angleY - 2) < -90) ? -90 : angleY-2;
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
         angleX -= 2;
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
@@ -762,9 +762,9 @@ int main() {
         return 0;
     }
 
-    glfwSetCursorPosCallback(window, mouse_callback);
+    // glfwSetCursorPosCallback(window, mouse_callback);
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     setupHalfCube();
     setupCube();
     setupCylinder(20);
